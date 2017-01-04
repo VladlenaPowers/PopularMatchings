@@ -271,19 +271,47 @@ namespace StableMarriageProblem
         
         static void Main(string[] args)
         {
-            int[][] men = new int[4][]
+            int[][] men = new int[3][]
             {
-                new int[1] { 0 },
-                new int[0] { },
-                new int[2] { 0, 2 },
-                new int[2] { 0, 1 }
+                //new int[1] { 0 },
+                //new int[0] { },
+                //new int[2] { 0, 2 },
+                //new int[2] { 0, 1 }
+
+                //new int[2] { 0, 1 },
+                //new int[1] { 0 }
+
+                new int[3] { 0, 1, 2 },
+                new int[2] { 0, 1 },
+                new int[1] { 0 }
+
+                //new int[1] { 0 },
+                //new int[3] { 0, 4, 1 },
+                //new int[3] { 3, 1, 2 },
+                //new int[1] { 3 },
+                //new int[2] { 4, 3 },
+                //new int[2] { 4, 5 }
             };
 
             int[][] women = new int[3][]
             {
-                new int[1] { 3 },
-                new int[2] { 3, 2 },
-                new int[1] { 1 }
+                //new int[1] { 3 },
+                //new int[2] { 3, 2 },
+                //new int[1] { 1 }
+
+                //new int[2] { 0, 1 },
+                //new int[1] { 0 }
+
+                new int[3] { 0, 1, 2 },
+                new int[2] { 0, 1 },
+                new int[1] { 0 }
+
+                //new int[2] { 1, 0 },
+                //new int[2] { 1, 2 },
+                //new int[1] { 2 },
+                //new int[3] { 4, 2, 3 },
+                //new int[3] { 1, 5, 4 },
+                //new int[1] { 5 }
             };
 
             if (men.Length >= women.Length)
