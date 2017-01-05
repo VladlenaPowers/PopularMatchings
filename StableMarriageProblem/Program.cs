@@ -69,49 +69,18 @@ namespace StableMarriageProblem
             }
         }
 
-        private static IEnumerable<int[]> Choose(int n, int k)
+        private static void Walk(int currentIndex, int k, int n, List<int> indexesSoFar, List<int[]> choosings)
         {
-            if (n == k)
+            if (indexesSoFar.Count == k)
             {
-                int[] output = new int[k];
-                for (int i = 0; i < k; i++)
-                {
-                    output[i] = i;
-                }
-                yield return output;
+                choosings.Add(indexesSoFar.ToArray());
             }
-            else if (k > n)
+            else if(currentIndex != n)
             {
-                yield break;
-            }
-            else if (k == 0)
-            {
-                yield return new int[0];
-            }
-            else
-            {
-                //Choose the first element and choose k - 1 in the remaining n - elements
-                int[] output = new int[k];
-                output[0] = 0;
-                foreach (var subOut in Choose(n - 1, k - 1))
-                {
-                    for (int i = 1; i < k; i++)
-                    {
-                        int temp = subOut[i - 1];
-                        temp++;
-                        output[i] = temp;
-                    }
-                    yield return output;
-                }
-
-                foreach (var subOut in Choose(n - 1, k))
-                {
-                    for (int i = 0; i < subOut.Length; i++)
-                    {
-                        subOut[i]++;
-                    }
-                    yield return subOut;
-                }
+                List<int> cpy = new List<int>(indexesSoFar);
+                cpy.Add(currentIndex);
+                Walk(currentIndex + 1, k, n, cpy, choosings);
+                Walk(currentIndex + 1, k, n, indexesSoFar, choosings);
             }
         }
 
@@ -319,23 +288,37 @@ namespace StableMarriageProblem
                 List<int[]> matchings = new List<int[]>();
                 int[] vector = new int[men.Length];
                 int unpairedMen = men.Length - women.Length;
-                Console.WriteLine("Matchings");
-                foreach (var unpairedMenIndex in Choose(men.Length, unpairedMen))
+
+                List<int[]> choosings = new List<int[]>();
+                Walk(0, unpairedMen, men.Length, new List<int>(), choosings);
+
+                foreach (var unpairedMenIndex in choosings)
                 {
-                    int j = 0;
+                    for (int i = 0; i < vector.Length; i++)
+                    {
+                        vector[i] = 0;
+                    }
                     for (int i = 0; i < unpairedMenIndex.Length; i++)
                     {
-                        while (j < unpairedMenIndex[i]) { vector[j++] = 0; }
                         vector[unpairedMenIndex[i]] = -1;
-                        j++;
                     }
-                    while (j < men.Length) { vector[j++] = 0; }
+
+                    PrintIntArray(vector);
 
                     foreach (var matching in PermutateNonNegative(vector, women.Length))
                     {
+                        int[] cpy = matching.ToArray();
 
-                        PrintIntArray(matching);
-                        matchings.Add(matching.ToArray());
+                        for (int i = 0; i < men.Length; i++)
+                        {
+                            int woman = cpy[i];
+                            if (woman >= 0 && (!women[woman].Contains(i) || !men[i].Contains(woman)))
+                            {
+                                cpy[i] = -1;
+                            }
+                        }
+
+                        matchings.Add(cpy);
                     }
                 }
                 Console.WriteLine("Popular");
