@@ -295,40 +295,69 @@ namespace StableMarriageProblem
                 this.b = b;
             }
         }
-        struct ManSrcWomanIPair
-        {
-            public int manSrc, womanI;
-            public ManSrcWomanIPair(int manSrc, int womanI)
-            {
-                this.manSrc = manSrc;
-                this.womanI = womanI;
-            }
-        }
-        struct ManSrcManIPair
-        {
-            public int manSrc, manI;
-            public ManSrcManIPair(int manSrc, int manI)
-            {
-                this.manSrc = manSrc;
-                this.manI = manI;
-            }
-        }
 
-        private static void GenerateKavithaMatching(ManSrcWomanIPair[] matching, Queue<ManSrcManIPair> queuedMen, List<int>[][] menPref, List<int>[] womenPref)
+        
+
+        private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen)
         {
-            while (queuedMen.Count > 0)
+            List<int>[][] doubleMen = new List<int>[2][];
+            for (int i = 0; i < 2; i++)
             {
-                ManSrcManIPair current = queuedMen.Dequeue();
-
-                List<int> manPrefList = menPref[current.manSrc][current.manI];
-
-                if (manPrefList.Count != 0)
+                doubleMen[i] = new List<int>[men.Length];
+                for (int j = 0; j < men.Length; j++)
                 {
-                    int mostPrefferedWoman = manPrefList[0];
-                    int matchedManI = -1;
-                    for (int j = 0; j < matching.Length; j++)
+                    doubleMen[i][j] = new List<int>(men[j].Length);
+                    for (int l = 0; l < men[j].Length; l++)
                     {
-                        if (matching[j].womanI == mostPrefferedWoman)
+                        doubleMen[i][j].Add(men[j][l]);
+                    }
+                }
+            }
+            List<int>[] copyWomen = new List<int>[women.Length];
+            for (int i = 0; i < women.Length; i++)
+            {
+                copyWomen[i] = new List<int>();
+                for (int j = 0; j < women[i].Length; j++)
+                {
+                    copyWomen[i].Add(women[i][j]);
+                }
+            }
+            PriorityQueue<IndexPair> queuedMen = new PriorityQueue<IndexPair>();
+            
+            for (int i = 0; i < prioritizedMen.Length; i++)
+            {
+                queuedMen.Enqueue(0, new IndexPair(1, prioritizedMen[i]));
+            }
+            for (int i = 0; i < doubleMen[0].Length; i++)
+            {
+                if (!prioritizedMen.Contains(i))
+                {
+                    queuedMen.Enqueue(1, new IndexPair(0, i));
+                }    
+            }
+            IndexPair[] kavithaMatching = new IndexPair[men.Length];
+            for (int i = 0; i < men.Length; i++)
+            {
+                kavithaMatching[i] = new IndexPair(0, -1);
+            }
+            //kavithaMatching[7] = new IndexPair(1, 2);
+            //for (int j = 7 - 1; j > 0; j--)
+            //{
+            //    doubleMen[1][copyWomen[2][j]].Remove(2);
+            //    doubleMen[0][copyWomen[2][j]].Remove(2);
+            //    copyWomen[2].RemoveAt(j);
+            //}
+
+            while (!queuedMen.Empty())
+            {
+                IndexPair current = queuedMen.Dequeue();
+                if (doubleMen[current.a][current.b].Count != 0)
+                {
+                    int mostPreferredNeighbor = doubleMen[current.a][current.b][0];
+                    int matchedManI = -1;
+                    for (int j = 0; j < kavithaMatching.Length; j++)
+                    {
+                        if(kavithaMatching[j].b == mostPreferredNeighbor)
                         {
                             matchedManI = j;
                             break;
@@ -336,105 +365,40 @@ namespace StableMarriageProblem
                     }
                     if (matchedManI >= 0)
                     {
-                        queuedMen.Enqueue(new ManSrcManIPair(matching[matchedManI].manSrc, matchedManI));
-                        //this was broken in the last algorithm
-                        //queuedMen.Enqueue(1 - current.a, new IndexPair(kavithaMatching[matchedManI].a, matchedManI));
-                        matching[matchedManI].womanI = -1;
+                        queuedMen.Enqueue(1 - current.a, new IndexPair(kavithaMatching[matchedManI].a, matchedManI));
+                        kavithaMatching[matchedManI].b = -1;
                     }
-                    matching[current.manI] = new ManSrcWomanIPair(current.manSrc, mostPrefferedWoman);
+                    kavithaMatching[current.b] = new IndexPair(current.a, mostPreferredNeighbor);
                     //PrintIndexPairArray(kavithaMatching);
 
-                    List<int> womansPref = womenPref[mostPrefferedWoman];
+                    List<int> womansPref = copyWomen[mostPreferredNeighbor];
 
-                    int i = womansPref.IndexOf(current.manI);
+                    int i = womansPref.IndexOf(current.b);
                     for (int j = womansPref.Count - 1; j > i; j--)
                     {
-                        if (current.manSrc == 0)
+                        if (current.a == 0)
                         {
-                            menPref[current.manSrc][womansPref[j]].Remove(mostPrefferedWoman);
+                            doubleMen[current.a][womansPref[j]].Remove(mostPreferredNeighbor);
                             womansPref.RemoveAt(j);
                         }
                         else
                         {
-                            menPref[current.manSrc][womansPref[j]].Remove(mostPrefferedWoman);
-                            menPref[0][womansPref[j]].Remove(mostPrefferedWoman);
+                            doubleMen[current.a][womansPref[j]].Remove(mostPreferredNeighbor);
+                            doubleMen[0][womansPref[j]].Remove(mostPreferredNeighbor);
                             womansPref.RemoveAt(j);
                         }
                     }
                 }
-                else if (current.manSrc == 0)
+                else if (current.a == 0)
                 {
-                    queuedMen.Enqueue(new ManSrcManIPair(1, current.manI));
+                    queuedMen.Enqueue(1, new IndexPair(1, current.b));
                 }
             }
-        }
-
-        private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen)
-        {
-            List<int>[][] menPref = new List<int>[2][];
-            for (int i = 0; i < 2; i++)
-            {
-                menPref[i] = new List<int>[men.Length];
-                for (int j = 0; j < men.Length; j++)
-                {
-                    menPref[i][j] = new List<int>(men[j].Length);
-                    for (int l = 0; l < men[j].Length; l++)
-                    {
-                        menPref[i][j].Add(men[j][l]);
-                    }
-                }
-            }
-            List<int>[] womenPref = new List<int>[women.Length];
-            for (int i = 0; i < women.Length; i++)
-            {
-                womenPref[i] = new List<int>();
-                for (int j = 0; j < women[i].Length; j++)
-                {
-                    womenPref[i].Add(women[i][j]);
-                }
-            }
-
-            ManSrcWomanIPair[] kavithaMatching = new ManSrcWomanIPair[men.Length];
-            for (int i = 0; i < men.Length; i++)
-            {
-                kavithaMatching[i] = new ManSrcWomanIPair(0, -1);
-            }
-            Queue<ManSrcManIPair> queuedMen = new Queue<ManSrcManIPair>();
-
-            queuedMen.Clear();
-            for (int i = 0; i < prioritizedMen.Length; i++)
-            {
-                queuedMen.Enqueue(new ManSrcManIPair(1, prioritizedMen[i]));
-            }
-            GenerateKavithaMatching(kavithaMatching, queuedMen, menPref, womenPref);
-
-            //Remove connected women from low-priority men's preference lists
-            for (int i = 0; i < kavithaMatching.Length; i++)
-            {
-                int womanI = kavithaMatching[i].womanI;
-                if (womanI >= 0)
-                {
-                    for (int j = 0; j < menPref[0].Length; j++)
-                    {
-                        menPref[0][j].Remove(womanI);
-                    }
-                }
-            }
-
-            queuedMen.Clear();
-            for (int i = 0; i < men.Length; i++)
-            {
-                if (!prioritizedMen.Contains(i))
-                {
-                    queuedMen.Enqueue(new ManSrcManIPair(0, i));
-                }
-            }
-            GenerateKavithaMatching(kavithaMatching, queuedMen, menPref, womenPref);
 
             int[] output = new int[kavithaMatching.Length];
             for (int i = 0; i < output.Length; i++)
             {
-                output[i] = kavithaMatching[i].womanI;
+                output[i] = kavithaMatching[i].b;
             }
             return output;
         }
