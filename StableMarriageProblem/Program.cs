@@ -296,6 +296,8 @@ namespace StableMarriageProblem
             }
         }
 
+        
+
         private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen)
         {
             List<int>[][] doubleMen = new List<int>[2][];
@@ -320,16 +322,17 @@ namespace StableMarriageProblem
                     copyWomen[i].Add(women[i][j]);
                 }
             }
-            Queue<IndexPair> queuedMen = new Queue<IndexPair>();
+            PriorityQueue<IndexPair> queuedMen = new PriorityQueue<IndexPair>();
+            
             for (int i = 0; i < prioritizedMen.Length; i++)
             {
-                queuedMen.Enqueue(new IndexPair(1, prioritizedMen[i]));
+                queuedMen.Enqueue(0, new IndexPair(1, prioritizedMen[i]));
             }
             for (int i = 0; i < doubleMen[0].Length; i++)
             {
                 if (!prioritizedMen.Contains(i))
                 {
-                    queuedMen.Enqueue(new IndexPair(0, i));
+                    queuedMen.Enqueue(1, new IndexPair(0, i));
                 }    
             }
             IndexPair[] kavithaMatching = new IndexPair[men.Length];
@@ -345,7 +348,7 @@ namespace StableMarriageProblem
             //    copyWomen[2].RemoveAt(j);
             //}
 
-                    while (queuedMen.Count != 0)
+            while (!queuedMen.Empty())
             {
                 IndexPair current = queuedMen.Dequeue();
                 if (doubleMen[current.a][current.b].Count != 0)
@@ -362,7 +365,7 @@ namespace StableMarriageProblem
                     }
                     if (matchedManI >= 0)
                     {
-                        queuedMen.Enqueue(new IndexPair(kavithaMatching[matchedManI].a, matchedManI));
+                        queuedMen.Enqueue(1 - current.a, new IndexPair(kavithaMatching[matchedManI].a, matchedManI));
                         kavithaMatching[matchedManI].b = -1;
                     }
                     kavithaMatching[current.b] = new IndexPair(current.a, mostPreferredNeighbor);
@@ -388,7 +391,7 @@ namespace StableMarriageProblem
                 }
                 else if (current.a == 0)
                 {
-                    queuedMen.Enqueue(new IndexPair(1, current.b));
+                    queuedMen.Enqueue(1, new IndexPair(1, current.b));
                 }
             }
 
@@ -438,34 +441,36 @@ namespace StableMarriageProblem
             List<int[]> uniqueOutputs = new List<int[]>();
             List<List<int[]>> prioritizedMen = new List<List<int[]>>();
 
-            for (int i = 0; i < men.Length; i++)
-            {
-                List<int[]> choosings = new List<int[]>();
-                Walk(0, i, men.Length, new List<int>(), choosings);
-                
-                foreach (var prioritizedMenI in choosings)
-                {
-                    int[] matching = KavithaAlgorithm(men, women, prioritizedMenI);
+            //for (int i = 0; i < men.Length; i++)
+            //{
+            //    List<int[]> choosings = new List<int[]>();
+            //    Walk(0, i, men.Length, new List<int>(), choosings);
 
-                    bool contained = false;
-                    for (int j = 0; j < uniqueOutputs.Count; j++)
-                    {
-                        if (CompareIntArrays(matching, uniqueOutputs[j]))
-                        {
-                            prioritizedMen[j].Add(prioritizedMenI);
-                            contained = true;
-                            break;
-                        }
-                    }
+            //    foreach (var prioritizedMenI in choosings)
+            //    {
+            //        int[] matching = KavithaAlgorithm(men, women, prioritizedMenI);
 
-                    if (!contained)
-                    {
-                        uniqueOutputs.Add(matching);
-                        prioritizedMen.Add(new List<int[]>());
-                        prioritizedMen.Last().Add(prioritizedMenI);
-                    }
-                }
-            }
+            //        bool contained = false;
+            //        for (int j = 0; j < uniqueOutputs.Count; j++)
+            //        {
+            //            if (CompareIntArrays(matching, uniqueOutputs[j]))
+            //            {
+            //                prioritizedMen[j].Add(prioritizedMenI);
+            //                contained = true;
+            //                break;
+            //            }
+            //        }
+
+            //        if (!contained)
+            //        {
+            //            uniqueOutputs.Add(matching);
+            //            prioritizedMen.Add(new List<int[]>());
+            //            prioritizedMen.Last().Add(prioritizedMenI);
+            //        }
+            //    }
+            //}
+
+            KavithaAlgorithm(men, women, new int[5] { 1,2,5,6,7});
 
             for (int i = 0; i < uniqueOutputs.Count; i++)
             {
