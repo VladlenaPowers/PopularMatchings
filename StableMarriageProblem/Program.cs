@@ -466,6 +466,8 @@ namespace StableMarriageProblem
                         vector[unpairedMenIndex[i]] = -1;
                     }
 
+                    Console.WriteLine(CollectionToString(vector));
+
                     foreach (var matching in PermutateNonNegative(vector, women.Length))
                     {
                         int[] cpy = matching.ToArray();
