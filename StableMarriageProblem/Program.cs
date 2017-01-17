@@ -490,6 +490,8 @@ namespace StableMarriageProblem
                         matchings.Add(cpy);
                     }
                 }
+                Console.Write("\n");
+                Console.Write("\n");
                 Console.Write("Preferences lists\n");
                 for (int i = 0; i < men.Length; i++)
                 {
