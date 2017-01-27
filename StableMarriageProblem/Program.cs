@@ -252,7 +252,7 @@ namespace StableMarriageProblem
             }
         }
         
-        private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen)
+        private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen, out int[] men1)
         {
             List<int>[][] doubleMen = new List<int>[2][];
             for (int i = 0; i < 2; i++)
@@ -370,10 +370,16 @@ namespace StableMarriageProblem
             }
 
             int[] output = new int[kavithaMatching.Length];
+            List<int> _men1 = new List<int>();
             for (int i = 0; i < output.Length; i++)
             {
                 output[i] = kavithaMatching[i].b;
+                if (kavithaMatching[i].a == 1)
+                {
+                    _men1.Add(i);
+                }
             }
+            men1 = _men1.ToArray();
             return output;
         }
         
@@ -403,6 +409,7 @@ namespace StableMarriageProblem
 
             List<int[]> uniqueOutputs = new List<int[]>();
             List<List<int[]>> prioritizedMen = new List<List<int[]>>();
+            List<List<int[]>> men1 = new List<List<int[]>>();
 
             for (int i = 0; i < men.Length; i++)
             {
@@ -411,7 +418,8 @@ namespace StableMarriageProblem
 
                 foreach (var prioritizedMenI in choosings)
                 {
-                    int[] matching = KavithaAlgorithm(men, women, prioritizedMenI);
+                    int[] _men1;
+                    int[] matching = KavithaAlgorithm(men, women, prioritizedMenI, out _men1);
 
                     bool contained = false;
                     for (int j = 0; j < uniqueOutputs.Count; j++)
@@ -419,6 +427,7 @@ namespace StableMarriageProblem
                         if (CompareIntArrays(matching, uniqueOutputs[j]))
                         {
                             prioritizedMen[j].Add(prioritizedMenI);
+                            men1[j].Add(_men1);
                             contained = true;
                             break;
                         }
@@ -428,21 +437,25 @@ namespace StableMarriageProblem
                     {
                         uniqueOutputs.Add(matching);
                         prioritizedMen.Add(new List<int[]>());
+                        men1.Add(new List<int[]>());
                         prioritizedMen.Last().Add(prioritizedMenI);
+                        men1.Last().Add(_men1);
                     }
                 }
             }
 
             //KavithaAlgorithm(men, women, new int[5] { 1,2,5,6,7});
 
+            const string format = "{0,-32} :{1}";
+
             for (int i = 0; i < uniqueOutputs.Count; i++)
             {
                 Console.Write("------------------------");
                 Console.Write(CollectionToString(uniqueOutputs[i]));
                 Console.WriteLine("------------------------");
-                foreach (var indexArray in prioritizedMen[i])
+                for (int j = 0; j < prioritizedMen[i].Count; j++)
                 {
-                    Console.WriteLine(CollectionToString(indexArray));
+                    Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
                 }
                 Console.WriteLine();
             }
