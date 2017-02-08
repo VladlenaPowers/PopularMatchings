@@ -682,16 +682,30 @@ namespace StableMarriageProblem
                     {
                         Console.WriteLine("--------------------------------------------------------------------\n\n");
 
-                        Console.WriteLine("men");
+                        Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
+                        bool first = true;
                         foreach (var man in men)
                         {
-                            Console.WriteLine(CollectionToString(man));
+                            if(!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
                         }
-                        Console.WriteLine("women");
+                        Console.WriteLine("};");
+                        Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
+                        first = true;
                         foreach (var woman in women)
                         {
-                            Console.WriteLine(CollectionToString(woman));
+                            if (!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
                         }
+                        Console.WriteLine("};");
                         //break;
                     }
                 }
