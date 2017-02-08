@@ -390,6 +390,18 @@ namespace StableMarriageProblem
                 }
             }
         }
+        static int NoNegativeEntries(int[] arr)
+        {
+            int output = 0;
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i] >= 0)
+                {
+                    output++;
+                }
+            }
+            return output;
+        }
 
         struct IndexPair
         {
@@ -661,7 +673,12 @@ namespace StableMarriageProblem
                     //}
 
                     int[][] overlap = Union(popularMatchings, uniqueOutputs).ToArray();
-                    if (overlap.Length == popularMatchings.Count)
+
+                    var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
+                    Array.Sort(sizes);
+
+
+                    if (sizes.Length > 1 && (sizes[0] != sizes[1]) && (overlap.Length != popularMatchings.Count))
                     {
                         Console.WriteLine("--------------------------------------------------------------------\n\n");
 
