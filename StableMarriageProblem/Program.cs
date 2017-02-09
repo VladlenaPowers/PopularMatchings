@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace StableMarriageProblem
@@ -22,6 +23,8 @@ namespace StableMarriageProblem
                 arr[i] += a;
             }
         }
+
+
 
         private static IEnumerable<int[]> OrderedSubset(int n)
         {
@@ -72,7 +75,7 @@ namespace StableMarriageProblem
                 }
             }
         }
-        private static IEnumerable<int[][][]> PreferenceListCombination(int n)
+        private static IEnumerable<int[][][]> PreferenceListCombination(int n, int seed)
         {
             int[][] orderedSubsets = OrderedSubset(n).ToArray();
             int digitMax = orderedSubsets.Length - 1;
@@ -87,7 +90,7 @@ namespace StableMarriageProblem
                 output[1][i] = orderedSubsets[0];
             }
 
-            Random r = new Random();
+            Random r = new Random(seed);
 
             int[] digits = new int[n * 2];
             int digitsTotal = digits.Length;
@@ -202,57 +205,51 @@ namespace StableMarriageProblem
 
         private static int ComparePairings(int[] pref, int a, int b)
         {
-            int aRank = -1;
-            int bRank = -1;
-            for (int i = 0; i < pref.Length; i++)
+            if(a == b)
             {
-                int test = pref[i];
-                if (test == a)
-                {
-                    aRank = i;
-                    if (bRank >= 0)
-                    {
-                        break;
-                    }
-                }
-                if (test == b)
-                {
-                    bRank = i;
-                    if (aRank >= 0)
-                    {
-                        break;
-                    }
-                }
+                return 0;
             }
-
-            bool containsA = aRank >= 0;
-            bool containsB = bRank >= 0;
-            if (containsA && containsB)
+            else if (a < 0)
             {
+                return -1;
+            }
+            else if (b < 0)
+            {
+                return 1;
+            }
+            else
+            {
+                int aRank = -1;
+                int bRank = -1;
+                for (int i = 0; i < pref.Length; i++)
+                {
+                    int test = pref[i];
+                    if (test == a)
+                    {
+                        aRank = i;
+                        if (bRank >= 0)
+                        {
+                            break;
+                        }
+                    }
+                    if (test == b)
+                    {
+                        bRank = i;
+                        if (aRank >= 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+
                 if (bRank < aRank)
                 {
                     return -1;
                 }
-                else if (aRank < bRank)
+                else
                 {
                     return 1;
                 }
-                else
-                {
-                    return 0;
-                }
-            }
-            else if(containsA)
-            {
-                return 1;
-            }
-            else if(containsB)
-            {
-                return -1;
-            }
-            else
-            {
-                return 0;
             }
         }
 
@@ -565,6 +562,8 @@ namespace StableMarriageProblem
             return output;
         }
 
+        private static object Lock = new object();
+
         private static void RunAlgorithm(int[][] men, int[][] women, out List<int[]> popularMatchings, out List<int[]> uniqueMatchings)
         {
             uniqueMatchings = new List<int[]>();
@@ -677,9 +676,9 @@ namespace StableMarriageProblem
             //}
         }
 
-        static void Main(string[] args)
+        static void Main_Aux(object seed)
         {
-            foreach (var item in PreferenceListCombination(5))
+            foreach (var item in PreferenceListCombination(5, (int)seed))
             {
                 int[][] men = item[0];
                 int[][] women = item[1];
@@ -710,59 +709,62 @@ namespace StableMarriageProblem
 
                 if (size && (overlap.Length != popularMatchings.Count))
                 {
-                    Console.WriteLine("--------------------------------------------------------------------\n\n");
+                    lock (Lock)
+                    {
+                        Console.WriteLine("--------------------------------------------------------------------\n\n");
 
-                    Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
-                    bool first = true;
-                    foreach (var man in men)
-                    {
-                        if(!first)
+                        Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
+                        bool first = true;
+                        foreach (var man in men)
                         {
-                            Console.WriteLine(",");
+                            if (!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
                         }
-                        first = false;
-                        Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
-                    }
-                    Console.WriteLine("};");
-                    Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
-                    first = true;
-                    foreach (var woman in women)
-                    {
-                        if (!first)
+                        Console.WriteLine("};");
+                        Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
+                        first = true;
+                        foreach (var woman in women)
                         {
-                            Console.WriteLine(",");
+                            if (!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
                         }
-                        first = false;
-                        Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
+                        Console.WriteLine("};");
+                        //break; 
                     }
-                    Console.WriteLine("};");
-                    //break;
                 }
             }
 
             Console.Read();
 
-           // int[][] men = new int[8][]
-           //{    new int[1] { 0 },
-           //     new int[2] { 0, 1 },
-           //     new int[3] { 3, 1, 2 },
-           //     new int[1] { 3 },
-           //     new int[1] { 4 },
-           //     new int[2] { 4, 5 },
-           //     new int[3] { 7, 5, 6 },
-           //     new int[1] { 7 }
-           //};
+            // int[][] men = new int[8][]
+            //{    new int[1] { 0 },
+            //     new int[2] { 0, 1 },
+            //     new int[3] { 3, 1, 2 },
+            //     new int[1] { 3 },
+            //     new int[1] { 4 },
+            //     new int[2] { 4, 5 },
+            //     new int[3] { 7, 5, 6 },
+            //     new int[1] { 7 }
+            //};
 
-           // int[][] women = new int[8][]
-           // {   new int[2] { 1, 0 },
-           //     new int[2] { 1, 2 },
-           //     new int[1] { 2 },
-           //     new int[2] { 2, 3 },
-           //     new int[2] { 5, 4 },
-           //     new int[2] { 5, 6 },
-           //     new int[1] { 6 },
-           //     new int[2] { 6, 7 }
-           // };
+            // int[][] women = new int[8][]
+            // {   new int[2] { 1, 0 },
+            //     new int[2] { 1, 2 },
+            //     new int[1] { 2 },
+            //     new int[2] { 2, 3 },
+            //     new int[2] { 5, 4 },
+            //     new int[2] { 5, 6 },
+            //     new int[1] { 6 },
+            //     new int[2] { 6, 7 }
+            // };
 
             //KavithaAlgorithm(men, women, new int[5] { 1,2,5,6,7});
 
@@ -787,6 +789,19 @@ namespace StableMarriageProblem
             //{
             //    throw new NotImplementedException();
             //}
+        }
+
+        static void Main(string[] args)
+        {
+            Random r = new Random(43262);
+            Thread[] array = new Thread[6];
+            for (int i = 0; i < array.Length; i++)
+            {
+                // Start the thread with a ParameterizedThreadStart.
+                ParameterizedThreadStart start = new ParameterizedThreadStart(Main_Aux);
+                array[i] = new Thread(start);
+                array[i].Start(r.Next(100000));
+            }
 
             Console.Read();
         }
