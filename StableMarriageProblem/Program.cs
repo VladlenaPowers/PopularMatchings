@@ -26,6 +26,34 @@ namespace StableMarriageProblem
 
 
 
+        private static IEnumerable<int[]> Subset(int n)
+        {
+            if (n == 1)
+            {
+                yield return new int[0] { };
+                yield return new int[1] { 0 };
+            }
+            else
+            {
+                List<int> output = new List<int>();
+
+                foreach (int[] remainingSubset in OrderedSubset(n - 1))
+                {
+                    AddToArray(remainingSubset, 1);
+
+                    //don't insert our element
+                    output.AddRange(remainingSubset);
+                    yield return output.ToArray();
+                    output.Clear();
+
+                    //append our element at the end
+                    output.AddRange(remainingSubset);
+                    output.Add(0);
+                    yield return output.ToArray();
+                    output.Clear();
+                }
+            }
+        }
         private static IEnumerable<int[]> OrderedSubset(int n)
         {
             if (n == 1)
@@ -263,8 +291,14 @@ namespace StableMarriageProblem
             for (int i = 0; i < a.Length; i++)
             {
                 int manPref = ComparePairings(men[i], a[i], b[i]);
-                aScore += Math.Max(0, manPref);
-                bScore += Math.Max(0, -manPref);
+                if (manPref > 0)
+                {
+                    aScore += 1;
+                }
+                else if (manPref < 0)
+                {
+                    bScore += 1;
+                }
             }
 
             for (int i = 0; i < women.Length; i++)
@@ -291,8 +325,14 @@ namespace StableMarriageProblem
                     }
                 }
                 int womanPref = ComparePairings(women[i], indexA, indexB);
-                aScore += Math.Max(0, womanPref);
-                bScore += Math.Max(0, -womanPref);
+                if (womanPref > 0)
+                {
+                    aScore += 1;
+                }
+                else if (womanPref < 0)
+                {
+                    bScore += 1;
+                }
             }
 
             if (aScore < bScore)
@@ -645,35 +685,8 @@ namespace StableMarriageProblem
                     matchings.Add(cpy);
                 }
             }
-            //Console.Write("Preferences lists\n");
-            //for (int i = 0; i < men.Length; i++)
-            //{
-            //    Console.Write(i);
-            //    Console.Write(": ");
-            //    Console.Write(CollectionToString(men[i]));
-            //    Console.Write("\n");
-            //}
-            //Console.Write("\n");
-            //Console.Write("\n");
-            //for (int i = 0; i < women.Length; i++)
-            //{
-            //    Console.Write(i);
-            //    Console.Write(": ");
-            //    Console.Write(CollectionToString(women[i]));
-            //    Console.Write("\n");
-            //}
-            //Console.Write("\n");
-            //Console.Write("\n");
-
-            //Console.WriteLine("Popular");
 
             popularMatchings = FindPopularMatchings(men, women, matchings);
-
-            //foreach (var popularMatching in popularMatchings)
-            //{
-            //    Console.Write(CollectionToString(popularMatching));
-            //    Console.Write("\n");
-            //}
         }
 
         static void Main_Aux(object seed)
@@ -790,6 +803,12 @@ namespace StableMarriageProblem
                     Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
                 }
                 Console.WriteLine();
+            }
+
+            Console.WriteLine();
+            foreach (var matching in popularMatchings)
+            {
+                Console.WriteLine(CollectionToString(matching));
             }
         }
 
