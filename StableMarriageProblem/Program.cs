@@ -692,53 +692,58 @@ namespace StableMarriageProblem
                 List<int[]> uniqueMatchings;
                 RunAlgorithm(men, women, out popularMatchings, out uniqueMatchings);
 
-                List<int[]> popularMatchings2;
-                List<int[]> uniqueMatchings2;
-                RunAlgorithm(women, men, out popularMatchings2, out uniqueMatchings2);
-                popularMatchings2 = popularMatchings2.Select(matching => InvertIntArray(matching)).ToList();
-                uniqueMatchings2 = uniqueMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+                //List<int[]> popularMatchings2;
+                //List<int[]> uniqueMatchings2;
+                //RunAlgorithm(women, men, out popularMatchings2, out uniqueMatchings2);
+                //popularMatchings2 = popularMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+                //uniqueMatchings2 = uniqueMatchings2.Select(matching => InvertIntArray(matching)).ToList();
 
-                popularMatchings.AddRange(popularMatchings2);
-                uniqueMatchings.AddRange(uniqueMatchings2);
+                //popularMatchings.AddRange(popularMatchings2);
+                //uniqueMatchings.AddRange(uniqueMatchings2);
 
                 int[][] overlap = Union(popularMatchings, uniqueMatchings).ToArray();
 
-                //var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
-                //Array.Sort(sizes);
-                bool size = true;//sizes.Length > 1 && (sizes[0] != sizes[1]);
-
-                if (size && (overlap.Length != popularMatchings.Count))
+                var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
+                Array.Sort(sizes);
+                if (!(sizes.Length > 1 && (sizes[0] != sizes[1])))
                 {
-                    lock (Lock)
-                    {
-                        Console.WriteLine("--------------------------------------------------------------------\n\n");
+                    continue;
+                }
 
-                        Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
-                        bool first = true;
-                        foreach (var man in men)
+                if (!(overlap.Length != popularMatchings.Count))
+                {
+                    continue;
+                }
+
+                lock (Lock)
+                {
+                    Console.WriteLine("--------------------------------------------------------------------\n\n");
+
+                    Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
+                    bool first = true;
+                    foreach (var man in men)
+                    {
+                        if (!first)
                         {
-                            if (!first)
-                            {
-                                Console.WriteLine(",");
-                            }
-                            first = false;
-                            Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
+                            Console.WriteLine(",");
                         }
-                        Console.WriteLine("};");
-                        Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
-                        first = true;
-                        foreach (var woman in women)
-                        {
-                            if (!first)
-                            {
-                                Console.WriteLine(",");
-                            }
-                            first = false;
-                            Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
-                        }
-                        Console.WriteLine("};");
-                        //break; 
+                        first = false;
+                        Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
                     }
+                    Console.WriteLine("};");
+                    Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
+                    first = true;
+                    foreach (var woman in women)
+                    {
+                        if (!first)
+                        {
+                            Console.WriteLine(",");
+                        }
+                        first = false;
+                        Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
+                    }
+                    Console.WriteLine("};");
+                    //break; 
                 }
             }
 
