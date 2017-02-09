@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace StableMarriageProblem
@@ -14,7 +15,7 @@ namespace StableMarriageProblem
             a = b;
             b = temp;
         }
-        
+
         private static void AddToArray(int[] arr, int a)
         {
             for (int i = 0; i < arr.Length; i++)
@@ -22,6 +23,8 @@ namespace StableMarriageProblem
                 arr[i] += a;
             }
         }
+
+
 
         private static IEnumerable<int[]> OrderedSubset(int n)
         {
@@ -72,7 +75,7 @@ namespace StableMarriageProblem
                 }
             }
         }
-        private static IEnumerable<int[][][]> PreferenceListCombination(int n)
+        private static IEnumerable<int[][][]> PreferenceListCombination(int n, int seed)
         {
             int[][] orderedSubsets = OrderedSubset(n).ToArray();
             int digitMax = orderedSubsets.Length - 1;
@@ -87,7 +90,7 @@ namespace StableMarriageProblem
                 output[1][i] = orderedSubsets[0];
             }
 
-            Random r = new Random();
+            Random r = new Random(seed);
 
             int[] digits = new int[n * 2];
             int digitsTotal = digits.Length;
@@ -138,7 +141,7 @@ namespace StableMarriageProblem
                 yield return arr;
                 yield break;
             }
-            
+
             foreach (var item in Permutate_Aux(arr, iEnd - 1))
             {
                 yield return arr;
@@ -191,7 +194,7 @@ namespace StableMarriageProblem
             {
                 choosings.Add(indexesSoFar.ToArray());
             }
-            else if(currentIndex != n)
+            else if (currentIndex != n)
             {
                 List<int> cpy = new List<int>(indexesSoFar);
                 cpy.Add(currentIndex);
@@ -202,57 +205,51 @@ namespace StableMarriageProblem
 
         private static int ComparePairings(int[] pref, int a, int b)
         {
-            int aRank = -1;
-            int bRank = -1;
-            for (int i = 0; i < pref.Length; i++)
+            if (a == b)
             {
-                int test = pref[i];
-                if (test == a)
-                {
-                    aRank = i;
-                    if (bRank >= 0)
-                    {
-                        break;
-                    }
-                }
-                if (test == b)
-                {
-                    bRank = i;
-                    if (aRank >= 0)
-                    {
-                        break;
-                    }
-                }
+                return 0;
             }
-
-            bool containsA = aRank >= 0;
-            bool containsB = bRank >= 0;
-            if (containsA && containsB)
+            else if (a < 0)
             {
+                return -1;
+            }
+            else if (b < 0)
+            {
+                return 1;
+            }
+            else
+            {
+                int aRank = -1;
+                int bRank = -1;
+                for (int i = 0; i < pref.Length; i++)
+                {
+                    int test = pref[i];
+                    if (test == a)
+                    {
+                        aRank = i;
+                        if (bRank >= 0)
+                        {
+                            break;
+                        }
+                    }
+                    if (test == b)
+                    {
+                        bRank = i;
+                        if (aRank >= 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+
                 if (bRank < aRank)
                 {
                     return -1;
                 }
-                else if (aRank < bRank)
+                else
                 {
                     return 1;
                 }
-                else
-                {
-                    return 0;
-                }
-            }
-            else if(containsA)
-            {
-                return 1;
-            }
-            else if(containsB)
-            {
-                return -1;
-            }
-            else
-            {
-                return 0;
             }
         }
 
@@ -289,7 +286,7 @@ namespace StableMarriageProblem
                         indexB = j;
                         if (indexA >= 0)
                         {
-                            break; 
+                            break;
                         }
                     }
                 }
@@ -383,12 +380,40 @@ namespace StableMarriageProblem
             {
                 foreach (var otherItem in b)
                 {
-                    if(CompareIntArrays(item, otherItem))
+                    if (CompareIntArrays(item, otherItem))
                     {
                         yield return item;
                     }
                 }
             }
+        }
+        static int NoNegativeEntries(int[] arr)
+        {
+            int output = 0;
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i] >= 0)
+                {
+                    output++;
+                }
+            }
+            return output;
+        }
+        static int[] InvertIntArray(int[] arr)
+        {
+            int[] output = new int[arr.Length];
+            for (int i = 0; i < arr.Length; i++)
+            {
+                output[i] = -1;
+            }
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i] >= 0)
+                {
+                    output[arr[i]] = i;
+                }
+            }
+            return output;
         }
 
         struct IndexPair
@@ -405,7 +430,7 @@ namespace StableMarriageProblem
                 return a + ", " + b;
             }
         }
-        
+
         private static int[] KavithaAlgorithm(int[][] men, int[][] women, int[] prioritizedMen, out int[] men1)
         {
             List<int>[][] doubleMen = new List<int>[2][];
@@ -431,7 +456,7 @@ namespace StableMarriageProblem
                 }
             }
             PriorityQueue<IndexPair> queuedMen = new PriorityQueue<IndexPair>();
-            
+
             for (int i = 0; i < prioritizedMen.Length; i++)
             {
                 queuedMen.Enqueue(0, new IndexPair(1, prioritizedMen[i]));
@@ -441,7 +466,7 @@ namespace StableMarriageProblem
                 if (!prioritizedMen.Contains(i))
                 {
                     queuedMen.Enqueue(1, new IndexPair(0, i));
-                }    
+                }
             }
             IndexPair[] kavithaMatching = new IndexPair[men.Length];
             for (int i = 0; i < men.Length; i++)
@@ -475,7 +500,7 @@ namespace StableMarriageProblem
                     int matchedManI = -1;
                     for (int j = 0; j < kavithaMatching.Length; j++)
                     {
-                        if(kavithaMatching[j].b == mostPreferredNeighbor)
+                        if (kavithaMatching[j].b == mostPreferredNeighbor)
                         {
                             matchedManI = j;
                             break;
@@ -489,7 +514,7 @@ namespace StableMarriageProblem
                     kavithaMatching[current.b] = new IndexPair(current.a, mostPreferredNeighbor);
                     //PrintIndexPairArray(kavithaMatching);
 
-                     List<int> womansPref = copyWomen[mostPreferredNeighbor];
+                    List<int> womansPref = copyWomen[mostPreferredNeighbor];
 
                     int i = womansPref.IndexOf(current.b);
                     //Console.WriteLine("womansPref.IndexOf " + i + "");
@@ -536,197 +561,258 @@ namespace StableMarriageProblem
             men1 = _men1.ToArray();
             return output;
         }
-        
-        static void Main(string[] args)
+
+        private static object Lock = new object();
+
+        private static void RunAlgorithm(int[][] men, int[][] women, out List<int[]> popularMatchings, out List<int[]> uniqueMatchings, out List<List<int[]>> prioritizedMen, out List<List<int[]>> men1)
         {
-            foreach (var item in PreferenceListCombination(5))
+            uniqueMatchings = new List<int[]>();
+            prioritizedMen = new List<List<int[]>>();
+            men1 = new List<List<int[]>>();
+
+            for (int i = 0; i < men.Length; i++)
             {
+                List<int[]> choosings = new List<int[]>();
+                Walk(0, i, men.Length, new List<int>(), choosings);
 
-                int[][] men = item[0];
-                int[][] women = item[1];
-
-                if(!SymmetricPreferences(men, women))
+                foreach (var prioritizedMenI in choosings)
                 {
-                    continue;
-                }
+                    int[] _men1;
+                    int[] matching = KavithaAlgorithm(men, women, prioritizedMenI, out _men1);
 
-                List<int[]> uniqueOutputs = new List<int[]>();
-                List<List<int[]>> prioritizedMen = new List<List<int[]>>();
-                List<List<int[]>> men1 = new List<List<int[]>>();
-
-                for (int i = 0; i < men.Length; i++)
-                {
-                    List<int[]> choosings = new List<int[]>();
-                    Walk(0, i, men.Length, new List<int>(), choosings);
-
-                    foreach (var prioritizedMenI in choosings)
+                    bool contained = false;
+                    for (int j = 0; j < uniqueMatchings.Count; j++)
                     {
-                        int[] _men1;
-                        int[] matching = KavithaAlgorithm(men, women, prioritizedMenI, out _men1);
-
-                        bool contained = false;
-                        for (int j = 0; j < uniqueOutputs.Count; j++)
+                        if (CompareIntArrays(matching, uniqueMatchings[j]))
                         {
-                            if (CompareIntArrays(matching, uniqueOutputs[j]))
-                            {
-                                prioritizedMen[j].Add(prioritizedMenI);
-                                men1[j].Add(_men1);
-                                contained = true;
-                                break;
-                            }
-                        }
-
-                        if (!contained)
-                        {
-                            uniqueOutputs.Add(matching);
-                            prioritizedMen.Add(new List<int[]>());
-                            men1.Add(new List<int[]>());
-                            prioritizedMen.Last().Add(prioritizedMenI);
-                            men1.Last().Add(_men1);
+                            prioritizedMen[j].Add(prioritizedMenI);
+                            men1[j].Add(_men1);
+                            contained = true;
+                            break;
                         }
                     }
-                }
-                
-                {
-                    List<int[]> matchings = new List<int[]>();
-                    int[] vector = new int[men.Length];
-                    int unpairedMen = men.Length - women.Length;
 
-                    List<int[]> choosings = new List<int[]>();
-                    Walk(0, unpairedMen, men.Length, new List<int>(), choosings);
-
-                    foreach (var unpairedMenIndex in choosings)
+                    if (!contained)
                     {
-                        for (int i = 0; i < vector.Length; i++)
-                        {
-                            vector[i] = 0;
-                        }
-                        for (int i = 0; i < unpairedMenIndex.Length; i++)
-                        {
-                            vector[unpairedMenIndex[i]] = -1;
-                        }
-
-                        foreach (var matching in PermutateNonNegative(vector, women.Length))
-                        {
-                            int[] cpy = matching.ToArray();
-
-                            for (int i = 0; i < vector.Length; i++)
-                            {
-                                if (vector[i] < 0)
-                                {
-                                    Console.WriteLine("NEg");
-                                }
-                            }
-
-                            for (int i = 0; i < men.Length; i++)
-                            {
-                                int woman = cpy[i];
-                                if (woman >= 0 && (!women[woman].Contains(i) || !men[i].Contains(woman)))
-                                {
-                                    cpy[i] = -1;
-                                }
-                            }
-
-                            matchings.Add(cpy);
-                        }
-                    }
-                    //Console.Write("Preferences lists\n");
-                    //for (int i = 0; i < men.Length; i++)
-                    //{
-                    //    Console.Write(i);
-                    //    Console.Write(": ");
-                    //    Console.Write(CollectionToString(men[i]));
-                    //    Console.Write("\n");
-                    //}
-                    //Console.Write("\n");
-                    //Console.Write("\n");
-                    //for (int i = 0; i < women.Length; i++)
-                    //{
-                    //    Console.Write(i);
-                    //    Console.Write(": ");
-                    //    Console.Write(CollectionToString(women[i]));
-                    //    Console.Write("\n");
-                    //}
-                    //Console.Write("\n");
-                    //Console.Write("\n");
-
-                    //Console.WriteLine("Popular");
-
-                    List<int[]> popularMatchings = FindPopularMatchings(men, women, matchings);
-
-                    //foreach (var popularMatching in popularMatchings)
-                    //{
-                    //    Console.Write(CollectionToString(popularMatching));
-                    //    Console.Write("\n");
-                    //}
-
-                    int[][] overlap = Union(popularMatchings, uniqueOutputs).ToArray();
-                    if (overlap.Length == popularMatchings.Count)
-                    {
-                        Console.WriteLine("--------------------------------------------------------------------\n\n");
-
-                        Console.WriteLine("men");
-                        foreach (var man in men)
-                        {
-                            Console.WriteLine(CollectionToString(man));
-                        }
-                        Console.WriteLine("women");
-                        foreach (var woman in women)
-                        {
-                            Console.WriteLine(CollectionToString(woman));
-                        }
-                        //break;
+                        uniqueMatchings.Add(matching);
+                        prioritizedMen.Add(new List<int[]>());
+                        men1.Add(new List<int[]>());
+                        prioritizedMen.Last().Add(prioritizedMenI);
+                        men1.Last().Add(_men1);
                     }
                 }
             }
 
-            Console.Read();
+            List<int[]> matchings = new List<int[]>();
+            int[] vector = new int[men.Length];
+            int unpairedMen = men.Length - women.Length;
 
-           // int[][] men = new int[8][]
-           //{    new int[1] { 0 },
-           //     new int[2] { 0, 1 },
-           //     new int[3] { 3, 1, 2 },
-           //     new int[1] { 3 },
-           //     new int[1] { 4 },
-           //     new int[2] { 4, 5 },
-           //     new int[3] { 7, 5, 6 },
-           //     new int[1] { 7 }
-           //};
+            List<int[]> chooses = new List<int[]>();
+            Walk(0, unpairedMen, men.Length, new List<int>(), chooses);
 
-           // int[][] women = new int[8][]
-           // {   new int[2] { 1, 0 },
-           //     new int[2] { 1, 2 },
-           //     new int[1] { 2 },
-           //     new int[2] { 2, 3 },
-           //     new int[2] { 5, 4 },
-           //     new int[2] { 5, 6 },
-           //     new int[1] { 6 },
-           //     new int[2] { 6, 7 }
-           // };
+            foreach (var unpairedMenIndex in chooses)
+            {
+                for (int i = 0; i < vector.Length; i++)
+                {
+                    vector[i] = 0;
+                }
+                for (int i = 0; i < unpairedMenIndex.Length; i++)
+                {
+                    vector[unpairedMenIndex[i]] = -1;
+                }
+
+                foreach (var matching in PermutateNonNegative(vector, women.Length))
+                {
+                    int[] cpy = matching.ToArray();
+
+                    for (int i = 0; i < vector.Length; i++)
+                    {
+                        if (vector[i] < 0)
+                        {
+                            Console.WriteLine("NEg");
+                        }
+                    }
+
+                    for (int i = 0; i < men.Length; i++)
+                    {
+                        int woman = cpy[i];
+                        if (woman >= 0 && (!women[woman].Contains(i) || !men[i].Contains(woman)))
+                        {
+                            cpy[i] = -1;
+                        }
+                    }
+
+                    matchings.Add(cpy);
+                }
+            }
+            //Console.Write("Preferences lists\n");
+            //for (int i = 0; i < men.Length; i++)
+            //{
+            //    Console.Write(i);
+            //    Console.Write(": ");
+            //    Console.Write(CollectionToString(men[i]));
+            //    Console.Write("\n");
+            //}
+            //Console.Write("\n");
+            //Console.Write("\n");
+            //for (int i = 0; i < women.Length; i++)
+            //{
+            //    Console.Write(i);
+            //    Console.Write(": ");
+            //    Console.Write(CollectionToString(women[i]));
+            //    Console.Write("\n");
+            //}
+            //Console.Write("\n");
+            //Console.Write("\n");
+
+            //Console.WriteLine("Popular");
+
+            popularMatchings = FindPopularMatchings(men, women, matchings);
+
+            //foreach (var popularMatching in popularMatchings)
+            //{
+            //    Console.Write(CollectionToString(popularMatching));
+            //    Console.Write("\n");
+            //}
+        }
+
+        static void Main_Aux(object seed)
+        {
+            foreach (var item in PreferenceListCombination(5, (int)seed))
+            {
+                int[][] men = item[0];
+                int[][] women = item[1];
+
+                if (!SymmetricPreferences(men, women))
+                {
+                    continue;
+                }
+
+                List<int[]> popularMatchings;
+                List<int[]> uniqueMatchings;
+                List<List<int[]>> prioritizedMen;
+                List<List<int[]>> men1;
+                RunAlgorithm(men, women, out popularMatchings, out uniqueMatchings, out prioritizedMen, out men1);
+
+                List<int[]> popularMatchings2;
+                List<int[]> uniqueMatchings2;
+                List<List<int[]>> prioritizedMen2;
+                List<List<int[]>> men12;
+                RunAlgorithm(women, men, out popularMatchings2, out uniqueMatchings2, out prioritizedMen2, out men12);
+                popularMatchings2 = popularMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+                uniqueMatchings2 = uniqueMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+
+                popularMatchings.AddRange(popularMatchings2);
+                uniqueMatchings.AddRange(uniqueMatchings2);
+
+                int[][] overlap = Union(popularMatchings, uniqueMatchings).ToArray();
+
+                //var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
+                //Array.Sort(sizes);
+                bool size = true;//sizes.Length > 1 && (sizes[0] != sizes[1]);
+
+                if (size && (overlap.Length != popularMatchings.Count))
+                {
+                    lock (Lock)
+                    {
+                        Console.WriteLine("--------------------------------------------------------------------\n\n");
+
+                        Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
+                        bool first = true;
+                        foreach (var man in men)
+                        {
+                            if (!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
+                        }
+                        Console.WriteLine("};");
+                        Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
+                        first = true;
+                        foreach (var woman in women)
+                        {
+                            if (!first)
+                            {
+                                Console.WriteLine(",");
+                            }
+                            first = false;
+                            Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
+                        }
+                        Console.WriteLine("};");
+                        //break; 
+                    }
+                }
+            }
+        }
+
+        static void Main2()
+        {
+            int[][] men = new int[8][]
+           {    new int[1] { 0 },
+                 new int[2] { 0, 1 },
+                 new int[3] { 3, 1, 2 },
+                 new int[1] { 3 },
+                 new int[1] { 4 },
+                 new int[2] { 4, 5 },
+                 new int[3] { 7, 5, 6 },
+                 new int[1] { 7 }
+           };
+
+            int[][] women = new int[8][]
+            {   new int[2] { 1, 0 },
+                 new int[2] { 1, 2 },
+                 new int[1] { 2 },
+                 new int[2] { 2, 3 },
+                 new int[2] { 5, 4 },
+                 new int[2] { 5, 6 },
+                 new int[1] { 6 },
+                 new int[2] { 6, 7 }
+            };
+
+            List<int[]> popularMatchings;
+            List<int[]> uniqueMatchings;
+            List<List<int[]>> prioritizedMen;
+            List<List<int[]>> men1;
+            RunAlgorithm(men, women, out popularMatchings, out uniqueMatchings, out prioritizedMen, out men1);
 
             //KavithaAlgorithm(men, women, new int[5] { 1,2,5,6,7});
 
-            //const string format = "{0,-32} :{1}";
+            const string format = "{0,-32} :{1}";
+            for (int i = 0; i < uniqueMatchings.Count; i++)
+            {
+                Console.Write("------------------------");
+                Console.Write(CollectionToString(uniqueMatchings[i]));
+                Console.WriteLine("------------------------");
+                for (int j = 0; j < prioritizedMen[i].Count; j++)
+                {
+                    Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
+                }
+                Console.WriteLine();
+            }
+        }
 
-            //for (int i = 0; i < uniqueOutputs.Count; i++)
-            //{
-            //    Console.Write("------------------------");
-            //    Console.Write(CollectionToString(uniqueOutputs[i]));
-            //    Console.WriteLine("------------------------");
-            //    for (int j = 0; j < prioritizedMen[i].Count; j++)
-            //    {
-            //        Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
-            //    }
-            //    Console.WriteLine();
-            //}
+        static bool RUN_SEARCH = false;
 
-            //if (men.Length >= women.Length)
-            //{
-            //}
-            //else
-            //{
-            //    throw new NotImplementedException();
-            //}
+        static void Main(string[] args)
+        {
+            if (RUN_SEARCH)
+            {
+                Random r = new Random(43262);
+                Thread[] array = new Thread[6];
+                for (int i = 0; i < array.Length; i++)
+                {
+                    // Start the thread with a ParameterizedThreadStart.
+                    ParameterizedThreadStart start = new ParameterizedThreadStart(Main_Aux);
+                    array[i] = new Thread(start);
+                    array[i].Start(r.Next(100000));
+                } 
+            }
+            else
+            {
+                Main2();
+            }
 
             Console.Read();
         }
