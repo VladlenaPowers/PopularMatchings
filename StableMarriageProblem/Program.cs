@@ -763,25 +763,24 @@ namespace StableMarriageProblem
         static void Main2()
         {
             int[][] men = new int[8][]
-           {    new int[1] { 0 },
-                 new int[2] { 0, 1 },
-                 new int[3] { 3, 1, 2 },
-                 new int[1] { 3 },
-                 new int[1] { 4 },
-                 new int[2] { 4, 5 },
-                 new int[3] { 7, 5, 6 },
-                 new int[1] { 7 }
-           };
-
+             {  new int[7] { 0,2,7,3,4,1,5 },
+                new int[7] { 1,2,4,3,0,7,5 },
+                new int[7] { 7,4,0,3,5,1,2 },
+                new int[5] { 2,1,5,7,4 },
+                new int[8] { 6,1,4,0,2,5,7,3 },
+                new int[7] { 0,5,4,7,3,1,2 },
+                new int[2] { 6,4 },
+                new int[7] { 2,7,3,4,1,5,0 }
+             };
             int[][] women = new int[8][]
-            {   new int[2] { 1, 0 },
-                 new int[2] { 1, 2 },
-                 new int[1] { 2 },
-                 new int[2] { 2, 3 },
-                 new int[2] { 5, 4 },
-                 new int[2] { 5, 6 },
-                 new int[1] { 6 },
-                 new int[2] { 6, 7 }
+            {   new int[6] { 2,4,0,1,7,5 },
+                new int[7] { 1,2,3,4,0,7,5 },
+                new int[7] { 0,7,4,3,5,1,2 },
+                new int[6] { 1,4,7,5,2,0 },
+                new int[8] { 6,1,4,0,2,5,7,3 },
+                new int[7] { 0,5,4,7,3,1,2 },
+                new int[2] { 6,4 },
+                new int[7] { 0,2,7,3,4,1,5 }
             };
 
             List<int[]> popularMatchings;
@@ -803,6 +802,17 @@ namespace StableMarriageProblem
                     Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
                 }
                 Console.WriteLine();
+            }
+
+            Console.WriteLine("Men:");
+            for (int i = 0; i < men.Length; i++)
+            {
+                Console.WriteLine(i + ":" + CollectionToString(men[i]));
+            }
+            Console.WriteLine("Women:");
+            for (int i = 0; i < women.Length; i++)
+            {
+                Console.WriteLine(i + ":" + CollectionToString(women[i]));
             }
 
             Console.WriteLine();
