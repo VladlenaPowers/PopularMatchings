@@ -821,9 +821,43 @@ namespace StableMarriageProblem
             }
 
             Console.WriteLine();
+            Console.WriteLine("Popular matchings:");
             foreach (var matching in popularMatchings)
             {
-                Console.WriteLine(CollectionToString(matching));
+                int perfectCount = 0;
+                for (int i = 0; i < matching.Length; i++)
+                {
+                    if (men[i].Length > 0)
+                    {
+                        if (matching[i] == men[i][0])
+                        {
+                            perfectCount++;
+                        } 
+                    }
+                }
+                for (int i = 0; i < women.Length; i++)
+                {
+                    if (women[i].Length > 0)
+                    {
+                        int index = -1;
+                        for (int j = 0; j < matching.Length; j++)
+                        {
+                            if (matching[j] == i)
+                            {
+                                index = j;
+                                break;
+                            }
+                        }
+                        if (index >= 0)
+                        {
+                            if (index == women[i][0])
+                            {
+                                perfectCount++;
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine(format, CollectionToString(matching), perfectCount);
             }
         }
 
