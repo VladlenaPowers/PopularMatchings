@@ -704,11 +704,11 @@ namespace StableMarriageProblem
 
                 int[][] overlap = Union(popularMatchings, uniqueMatchings).ToArray();
 
-                var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
-                Array.Sort(sizes);
+                //var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
+                //Array.Sort(sizes);
+                bool size = true;//sizes.Length > 1 && (sizes[0] != sizes[1]);
 
-
-                if (sizes.Length > 1 && (sizes[0] != sizes[1]) && (overlap.Length != popularMatchings.Count))
+                if (size && (overlap.Length != popularMatchings.Count))
                 {
                     Console.WriteLine("--------------------------------------------------------------------\n\n");
 
