@@ -9,17 +9,17 @@ namespace StableMarriageProblem
 {
     class Matching
     {
-        public class NonNegativeEntriesCComparer : IComparer<int[]>
-        {
-            public int Compare(int[] x, int[] y)
-            {
-                int xE = NonNegativeEntries(x);
-                int yE = NonNegativeEntries(y);
+        //public class NonNegativeEntriesCComparer : IComparer<int[]>
+        //{
+        //    public int Compare(int[] x, int[] y)
+        //    {
+        //        int xE = NonNegativeEntries(x);
+        //        int yE = NonNegativeEntries(y);
 
-                return xE.CompareTo(yE);
-            }
-        }
-        public static NonNegativeEntriesCComparer nonNegativeEntriesComparer = new NonNegativeEntriesCComparer();
+        //        return xE.CompareTo(yE);
+        //    }
+        //}
+        //public static NonNegativeEntriesCComparer nonNegativeEntriesComparer = new NonNegativeEntriesCComparer();
 
         public class EqualityComparer : IEqualityComparer<int[]>
         {
@@ -120,7 +120,7 @@ namespace StableMarriageProblem
 
                 for (int i = 0; i < men.Length; i++)
                 {
-                    int manPref = ComparePairings(men[manI], x[i], y[i]);
+                    int manPref = ComparePairings(men[i], x[i], y[i]);
                     if (manPref > 0)
                     {
                         xScore += 1;

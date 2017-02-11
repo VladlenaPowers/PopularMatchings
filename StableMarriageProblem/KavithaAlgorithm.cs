@@ -23,7 +23,7 @@ namespace StableMarriageProblem
             return output.ToArray();
         }
 
-        private class Output
+        public class Output
         {
             public int[] matching;
             public int[] men0;
@@ -66,7 +66,7 @@ namespace StableMarriageProblem
             }
         }
 
-        private static Output Run(int[][] men, int[][] women, int[] prioritizedMen)
+        public static Output Run(int[][] men, int[][] women, IEnumerable<int> prioritizedMen)
         {
             List<int>[][] doubleMen = new List<int>[2][];
             for (int i = 0; i < 2; i++)
@@ -92,9 +92,9 @@ namespace StableMarriageProblem
             }
             PriorityQueue<IndexPair> queuedMen = new PriorityQueue<IndexPair>();
 
-            for (int i = 0; i < prioritizedMen.Length; i++)
+            foreach (var man in prioritizedMen)
             {
-                queuedMen.Enqueue(0, new IndexPair(1, prioritizedMen[i]));
+                queuedMen.Enqueue(0, new IndexPair(1, man));
             }
             for (int i = 0; i < doubleMen[0].Length; i++)
             {
@@ -103,6 +103,7 @@ namespace StableMarriageProblem
                     queuedMen.Enqueue(1, new IndexPair(0, i));
                 }
             }
+
             IndexPair[] kavithaMatching = new IndexPair[men.Length];
             for (int i = 0; i < men.Length; i++)
             {
