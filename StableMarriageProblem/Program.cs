@@ -691,7 +691,7 @@ namespace StableMarriageProblem
 
         static void Main_Aux(object seed)
         {
-            foreach (var item in PreferenceListCombination(5, (int)seed))
+            foreach (var item in PreferenceListCombination(4, (int)seed))
             {
                 int[][] men = item[0];
                 int[][] women = item[1];
@@ -706,23 +706,23 @@ namespace StableMarriageProblem
                 List<List<int[]>> prioritizedMen;
                 List<List<int[]>> men1;
                 RunAlgorithm(men, women, out popularMatchings, out uniqueMatchings, out prioritizedMen, out men1);
-                
-                //List<int[]> popularMatchings2;
-                //List<int[]> uniqueMatchings2;
-                //List<List<int[]>> prioritizedMen2;
-                //List<List<int[]>> men12;
-                //RunAlgorithm(women, men, out popularMatchings2, out uniqueMatchings2, out prioritizedMen2, out men12);
-                //popularMatchings2 = popularMatchings2.Select(matching => InvertIntArray(matching)).ToList();
-                //uniqueMatchings2 = uniqueMatchings2.Select(matching => InvertIntArray(matching)).ToList();
 
-                //popularMatchings.AddRange(popularMatchings2);
-                //uniqueMatchings.AddRange(uniqueMatchings2);
+                List<int[]> popularMatchings2;
+                List<int[]> uniqueMatchings2;
+                List<List<int[]>> prioritizedMen2;
+                List<List<int[]>> men12;
+                RunAlgorithm(women, men, out popularMatchings2, out uniqueMatchings2, out prioritizedMen2, out men12);
+                popularMatchings2 = popularMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+                uniqueMatchings2 = uniqueMatchings2.Select(matching => InvertIntArray(matching)).ToList();
+
+                popularMatchings.AddRange(popularMatchings2);
+                uniqueMatchings.AddRange(uniqueMatchings2);
 
                 int[][] overlap = Union(popularMatchings, uniqueMatchings).ToArray();
 
                 var sizes = popularMatchings.Select(arr => NoNegativeEntries(arr)).ToArray();
                 Array.Sort(sizes);
-                if (!(sizes.Length > 1 && (sizes[0] != sizes[1])))
+                if (sizes[0] != sizes[1])
                 {
                     continue;
                 }
@@ -768,24 +768,24 @@ namespace StableMarriageProblem
         static void Main2()
         {
             int[][] men = new int[8][]
-             {  new int[7] { 0,2,7,3,4,1,5 },
+             {  new int[5] { 4,0,1,5,7 },
+                new int[6] { 1,4,3,0,7,5 },
+                new int[6] { 7,4,0,3,5,1 },
+                new int[0] { },
+                new int[7] { 6,1,4,0,5,7,3 },
+                new int[6] { 0,5,4,7,3,1 },
+                new int[2] { 4,6 },
+                new int[6] { 7,3,4,1,5,0 }
+             };
+            int[][] women = new int[8][]
+            {   new int[6] { 4,0,1,5,7,2 },
                 new int[7] { 1,2,4,3,0,7,5 },
                 new int[7] { 7,4,0,3,5,1,2 },
                 new int[5] { 2,1,5,7,4 },
                 new int[8] { 6,1,4,0,2,5,7,3 },
                 new int[7] { 0,5,4,7,3,1,2 },
-                new int[2] { 6,4 },
+                new int[2] { 4,6 },
                 new int[7] { 2,7,3,4,1,5,0 }
-             };
-            int[][] women = new int[8][]
-            {   new int[6] { 2,4,0,1,7,5 },
-                new int[7] { 1,2,3,4,0,7,5 },
-                new int[7] { 0,7,4,3,5,1,2 },
-                new int[6] { 1,4,7,5,2,0 },
-                new int[8] { 6,1,4,0,2,5,7,3 },
-                new int[7] { 0,5,4,7,3,1,2 },
-                new int[2] { 6,4 },
-                new int[7] { 0,2,7,3,4,1,5 }
             };
 
             List<int[]> popularMatchings;
