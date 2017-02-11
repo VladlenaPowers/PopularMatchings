@@ -43,8 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Matching.cs" />
+    <Compile Include="Pairing.cs" />
     <Compile Include="PriorityQueue.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Program - Copy.cs" />
+    <Resource Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
