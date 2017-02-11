@@ -132,8 +132,8 @@ namespace StableMarriageProblem
             if(true)
             {
                 //Run Kavitha's Algorithm
-                Dictionary<int[], List<IEnumerable<int>>> menBefore = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
-                Dictionary<int[], List<IEnumerable<int>>> menAfter = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
+                var menBefore = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
+                var menAfter = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
                 foreach (var prioritizedMen in Enumerable.Range(0, men.Length).Subset())
                 {
                     KavithaAlgorithm.Output o = KavithaAlgorithm.Run(men, women, prioritizedMen);
@@ -144,8 +144,8 @@ namespace StableMarriageProblem
                     }
                     else
                     {
-                        List<IEnumerable<int>> temp = new List<IEnumerable<int>>();
-                        List<IEnumerable<int>> temp2 = new List<IEnumerable<int>>();
+                        var temp = new List<IEnumerable<int>>();
+                        var temp2 = new List<IEnumerable<int>>();
                         temp.Add(o.men1);
                         temp2.Add(prioritizedMen);
                         menAfter[o.matching] = temp;
