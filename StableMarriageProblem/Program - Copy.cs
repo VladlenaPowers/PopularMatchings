@@ -106,7 +106,7 @@ namespace StableMarriageProblem
         static void Main(string[] args)
         {
             Console.SetWindowPosition(0, 0);
-            Console.SetWindowSize(128, 64);
+            Console.SetWindowSize(200, 64);
 
             int[][] men = new int[8][]
              {  new int[5] { 4,0,1,5,7 },
@@ -132,53 +132,53 @@ namespace StableMarriageProblem
             if(true)
             {
                 //Run Kavitha's Algorithm
-                Dictionary<int[], List<int[]>> matchingToMen1Dict = new Dictionary<int[], List<int[]>>(Matching.equalityComparer);
-                foreach (var prioritizedMen in Subset(Enumerable.Range(0, men.Length)))
+                Dictionary<int[], List<IEnumerable<int>>> menBefore = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
+                Dictionary<int[], List<IEnumerable<int>>> menAfter = new Dictionary<int[], List<IEnumerable<int>>>(Matching.equalityComparer);
+                foreach (var prioritizedMen in Enumerable.Range(0, men.Length).Subset())
                 {
                     KavithaAlgorithm.Output o = KavithaAlgorithm.Run(men, women, prioritizedMen);
-                    if (matchingToMen1Dict.ContainsKey(o.matching))
+                    if (menAfter.ContainsKey(o.matching))
                     {
-                        matchingToMen1Dict[o.matching].Add(o.men1);
+                        menBefore[o.matching].Add(prioritizedMen);
+                        menAfter[o.matching].Add(o.men1);
                     }
                     else
                     {
-                        List<int[]> temp = new List<int[]>();
+                        List<IEnumerable<int>> temp = new List<IEnumerable<int>>();
+                        List<IEnumerable<int>> temp2 = new List<IEnumerable<int>>();
                         temp.Add(o.men1);
-                        matchingToMen1Dict[o.matching] = temp;
+                        temp2.Add(prioritizedMen);
+                        menAfter[o.matching] = temp;
+                        menBefore[o.matching] = temp2;
                     }
                 }
 
-                foreach (var kvPair in matchingToMen1Dict)
+                const string format = "{0,-32} :{1}";
+
+                foreach (var kvPair in menAfter)
                 {
+                    Console.WriteLine();
                     Console.WriteLine("----------------------------- " + kvPair.Key.DefaultString() + " -------------------------------");
-                    Console.WriteLine(CollectionToString(kvPair.Value.Select(list => list.DefaultString()), "", "\n", ""));
+                    Console.WriteLine(CollectionToString(kvPair.Value.Zip(menBefore[kvPair.Key], (after, before) => {
+                        return string.Format(format, before.DefaultString(), after.DefaultString());
+                    }), "", "\n", ""));
                 }
-            }
 
-            if(false)
-            {
-                IEnumerable<int[]> matchings = GenerateValidMatchings(men, women);
-                matchings = matchings.Distinct(Matching.equalityComparer);
+                Console.WriteLine();
 
-                matchings.Subset();
+                Console.WriteLine("Men:");
+                Console.WriteLine(CollectionToString(men.Select((list, i) => i + ": " + list.DefaultString()), "", "\n", ""));
+                Console.WriteLine("Women:");
+                Console.WriteLine(CollectionToString(women.Select((list, i) => i + ": " + list.DefaultString()), "", "\n", ""));
 
-                foreach (var popularMatching in PopularMatchings(men, women, matchings))
+                Console.WriteLine();
+
+                IEnumerable<int[]> distinctValidMathings = GenerateValidMatchings(men, women).Distinct(Matching.equalityComparer);
+                foreach (var popularMatching in PopularMatchings(men, women, distinctValidMathings))
                 {
                     Console.WriteLine(popularMatching.DefaultString());
                 }
-
-
-
-
-                //foreach (var permutation in Permutation(Enumerable.Range(0, 3)))
-                //{
-                //    Console.WriteLine(CollectionToString(permutation));
-                //}
-
-                //Console.WriteLine(Permutation(Enumerable.Range(0, 10)).Count());
             }
-
-
 
             Console.Read();
         }
