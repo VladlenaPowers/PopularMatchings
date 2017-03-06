@@ -4,25 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StableMarriageProblem
+namespace PopularMatching
 {
-    class KavithaAlgorithm
+    class ContinuousKavitha
     {
-        // This function returns all integers in the sequence { 0, 1, 2, ... , n } that are not contained in the
-        // arr parameter
-        private static int[] ComplementIndicesArray(int[] arr, int n)
-        {
-            List<int> output = new List<int>();
-            for (int i = 0; i < n; i++)
-            {
-                if (!arr.Contains(i))
-                {
-                    output.Add(i);
-                }
-            }
-            return output.ToArray();
-        }
-
         public class Output
         {
             public int[] matching;
@@ -32,23 +17,9 @@ namespace StableMarriageProblem
             public Output(int[] matching, int[] men1)
             {
                 this.matching = matching;
-                this.men0 = ComplementIndicesArray(men1, matching.Length);
+                this.men0 = Utility.ComplementIndicesArray(men1, matching.Length);
                 this.men1 = men1;
             }
-
-            public class MatchingEqualityComparer : IEqualityComparer<Output>
-            {
-                public bool Equals(Output x, Output y)
-                {
-                    return Matching.equalityComparer.Equals(x.matching, y.matching);
-                }
-
-                public int GetHashCode(Output obj)
-                {
-                    return Matching.equalityComparer.GetHashCode(obj.matching);
-                }
-            }
-            public static MatchingEqualityComparer matchingEqualityComparer = new MatchingEqualityComparer();
         }
 
         private struct IndexPair
@@ -175,8 +146,15 @@ namespace StableMarriageProblem
             }
 
             int[] output = kavithaMatching.Select(pair => pair.b).ToArray();
-            int[] men1 = kavithaMatching.Where(pair => pair.a == 1).Select((pair, i) => i).ToArray();
-            return new Output(output, men1);
+            List<int> men1 = new List<int>();
+            for (int i = 0; i < kavithaMatching.Length; i++)
+            {
+                if (kavithaMatching[i].a == 1)
+                {
+                    men1.Add(i);
+                }
+            }
+            return new Output(output, men1.ToArray());
         }
     }
 }

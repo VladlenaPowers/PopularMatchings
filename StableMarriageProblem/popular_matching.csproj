@@ -44,12 +44,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KavithaAlgorithm.cs" />
-    <Compile Include="Matching.cs" />
-    <Compile Include="Pairing.cs" />
-    <Compile Include="PriorityQueue.cs" />
-    <Compile Include="Program - Copy.cs" />
-    <Resource Include="Program.cs" />
+    <Compile Include="Kavitha\ContinuousKavitha.cs" />
+    <Compile Include="Kavitha\DiscreteKavitha.cs" />
+    <Compile Include="Matching\MatchingEqualityComparer.cs" />
+    <Compile Include="Matching\MatchingPopularityComparer.cs" />
+    <Compile Include="Utility\PriorityQueue.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Utility\Utility.cs" />
+    <Resource Include="Deprecated.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
