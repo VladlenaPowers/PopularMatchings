@@ -145,8 +145,9 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
+            
 
-            int[][] men = new int[5][]
+             int[][] men = new int[5][]
              {  new int[2] { 0,3 },
                 new int[2] { 0,1 },
                 new int[3] { 1,0,2 },
@@ -160,6 +161,8 @@ namespace PopularMatching
                 new int[3] { 4,0,3 },
                 new int[2] { 3,4 }
             };
+
+            
 
             const bool USE_DISCRETE = true;
             
@@ -261,7 +264,7 @@ namespace PopularMatching
 
             Console.WriteLine();
             Console.WriteLine("women:");
-            Console.WriteLine(Utility.CollectionToString(men.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
+            Console.WriteLine(Utility.CollectionToString(women.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
 
             //Console.WriteLine();
             //Console.WriteLine("popularMatchings:");
