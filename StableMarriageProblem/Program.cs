@@ -15,70 +15,85 @@ namespace PopularMatching
 
     public static class Program
     {
-
         //this algorithm generates all possible matchings
         private static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
         {
-            var menSequence = Enumerable.Range(0, men.Length);
+            return Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() == men.Length).Select(matching => {
+                int[] cpy = matching.ToArray();
+                for (int l = 0; l < cpy.Length; l++)
+                {
+                    int woman = cpy[l];
+                    if (woman >= 0)
+                    {
+                        if (!(women[woman].Contains(l) || men[l].Contains(woman)))
+                        {
+                            cpy[l] = -1;
+                        }
+                    }
+                }
+                return cpy;
+            }).Distinct(MatchingEqualityComparer.INSTANCE);
+
+            //var menSequence = Enumerable.Range(0, men.Length);
 
             //represents a three-dimensional jagged array
             //i0 = the number of unmatched men
             //i1 = possible set of unmatched men
             //i2 = unmatched man
-            var unmatchedMen = Enumerable.Range(0, men.Length + 1).Select(unmatchedMenCount => {
-                return Enumerable.Range(0, men.Length).Subset().Where(i => i.Count() == unmatchedMenCount).Select(i => i.ToArray()).ToArray();
-            }).ToArray();
-            
-            foreach (var matchedWomen in Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() <= men.Length))
-            {
-                int[] cpy = matchedWomen.ToArray();
-                
-                int unmatchedMenCount = men.Length - cpy.Length;
-                int[][] possibleUnmatchedMen = unmatchedMen[unmatchedMenCount];
-                for (int i = 0; i < possibleUnmatchedMen.Length; i++)
-                {
-                    int[] unmatchedMen2 = possibleUnmatchedMen[i];
+            //var unmatchedMen = Enumerable.Range(0, men.Length + 1).Select(unmatchedMenCount => {
+            //    return Enumerable.Range(0, men.Length).Subset().Where(i => i.Count() == unmatchedMenCount).Select(i => i.ToArray()).ToArray();
+            //}).ToArray();
 
-                    int[] output = new int[men.Length];
+            //foreach (var matchedWomen in Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() <= men.Length))
+            //{
+            //    int[] cpy = matchedWomen.ToArray();
 
-                    int j = 0;
-                    int k = 0;
-                    for (int l = 0; l < output.Length; l++)
-                    {
-                        if (j < unmatchedMenCount && l == unmatchedMen2[j])
-                        {
-                            output[l] = -1;
-                            j++;
-                        }
-                        else if(k < cpy.Length)
-                        {
-                            output[l] = cpy[k++];
-                        }
-                        else
-                        {
-                            throw new Exception("Not enough unmatched and matched men");
-                        }
-                    }
+            //    int unmatchedMenCount = men.Length - cpy.Length;
+            //    int[][] possibleUnmatchedMen = unmatchedMen[unmatchedMenCount];
+            //    for (int i = 0; i < possibleUnmatchedMen.Length; i++)
+            //    {
+            //        int[] unmatchedMen2 = possibleUnmatchedMen[i];
 
-                    bool passes = true;
-                    for (int l = 0; l < output.Length; l++)
-                    {
-                        int woman = output[l];
-                        if (woman >= 0)
-                        {
-                            if (!(women[woman].Contains(l) && men[l].Contains(woman)))
-                            {
-                                passes = false;
-                            }
-                        }
-                    }
+            //        int[] output = new int[men.Length];
 
-                    if (passes)
-                    {
-                        yield return output;
-                    }
-                }
-            }
+            //        int j = 0;
+            //        int k = 0;
+            //        for (int l = 0; l < output.Length; l++)
+            //        {
+            //            if (j < unmatchedMenCount && l == unmatchedMen2[j])
+            //            {
+            //                output[l] = -1;
+            //                j++;
+            //            }
+            //            else if (k < cpy.Length)
+            //            {
+            //                output[l] = cpy[k++];
+            //            }
+            //            else
+            //            {
+            //                throw new Exception("Not enough unmatched and matched men");
+            //            }
+            //        }
+
+            //        bool passes = true;
+            //        for (int l = 0; l < output.Length; l++)
+            //        {
+            //            int woman = output[l];
+            //            if (woman >= 0)
+            //            {
+            //                if (!(women[woman].Contains(l) && men[l].Contains(woman)))
+            //                {
+            //                    passes = false;
+            //                }
+            //            }
+            //        }
+
+            //        if (passes)
+            //        {
+            //            yield return output;
+            //        }
+            //    }
+            //}
         }
 
         //this algorithm generates a collection of matchings
@@ -145,24 +160,31 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            
 
-             int[][] men = new int[5][]
-             {  new int[2] { 0,3 },
-                new int[2] { 0,1 },
-                new int[3] { 1,0,2 },
-                new int[3] { 0,3,4 },
-                new int[2] { 4,3 }
-             };
-            int[][] women = new int[5][]
-            {   new int[4] { 2,3,0,1 },
-                new int[2] { 1,2 },
-                new int[1] { 2 },
-                new int[3] { 4,0,3 },
-                new int[2] { 3,4 }
+
+            int[][] men = new int[8][]
+            {   new int[8] { 4,6,0,1,5,7,3,2 },
+                new int[8] { 1,2,6,4,3,0,7,5 },
+                new int[8] { 7,4,0,3,5,1,2,6 },
+                new int[8] { 2,1,6,3,0,5,7,4 },
+                new int[8] { 6,1,4,0,2,5,7,3 },
+                new int[8] { 0,5,6,4,7,3,1,2 },
+                new int[8] { 1,4,6,5,2,3,7,0 },
+                new int[8] { 2,7,3,4,6,1,5,0 }
             };
 
-            
+            int[][] women = new int[8][]
+                        {   new int[8] { 4,2,6,5,0,1,7,3 },
+                new int[8] { 7,5,2,4,6,1,0,3 },
+                new int[8] { 0,4,5,1,3,7,6,2 },
+                new int[8] { 7,6,2,1,3,0,4,5 },
+                new int[8] { 5,3,6,2,7,0,1,4 },
+                new int[8] { 1,7,4,2,3,5,6,0 },
+                new int[8] { 6,4,1,0,7,5,3,2 },
+                new int[8] { 6,3,0,4,1,2,5,7 }
+                        };
+
+
 
             const bool USE_DISCRETE = true;
             
