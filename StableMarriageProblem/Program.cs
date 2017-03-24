@@ -15,6 +15,97 @@ namespace PopularMatching
 
     public static class Program
     {
+        private static IEnumerable<int[][][]> RandomPreferenceLists(int n, int seed)
+        {
+            int[][] orderedSubsets = Utility.OrderedSubset(Enumerable.Range(0, n)).Select(ss => ss.ToArray()).ToArray();
+            int digitMax = orderedSubsets.Length - 1;
+
+            int[][][] output = new int[2][][];
+            output[0] = new int[n][];
+            output[1] = new int[n][];
+
+            Random r = new Random(seed);
+            
+            int digitsTotal = 2 * n;
+            bool finished = false;
+            while (!finished)
+            {
+                for (int i = 0; i < digitsTotal; i++)
+                {
+                    int g = i / n;
+                    output[g][i - (g * n)] = orderedSubsets[r.Next(digitMax)];
+                }
+
+                var men = output[0];
+                var women = output[1];
+
+                bool failed = false;
+                for (int j = 0; j < men.Length; j++)
+                {
+                    var manPrefList = men[j];
+                    for (int g = 0; g < manPrefList.Length; g++)
+                    {
+                        var womanPrefList = women[manPrefList[g]];
+                        if (!womanPrefList.Contains(j))
+                        {
+                            failed = true;
+                            break;
+                        }
+                    }
+                    if (failed)
+                        break;
+                }
+
+                if (!failed)
+                {
+                    for (int j = 0; j < women.Length; j++)
+                    {
+                        var womanPrefList = women[j];
+                        for (int g = 0; g < womanPrefList.Length; g++)
+                        {
+                            var manPrefList = men[womanPrefList[g]];
+                            if (!manPrefList.Contains(j))
+                            {
+                                failed = true;
+                                break;
+                            }
+                        }
+                        if (failed)
+                            break;
+                    } 
+                }
+
+                if (!failed)
+                    yield return output;
+
+                //for (int i = 0; i < digitsTotal; i++)
+                //{
+                //    digits[i]++;
+                //    if (digits[i] == digitMax)
+                //    {
+                //        if (i == lastDigitI)
+                //        {
+                //            //overflow
+                //            finished = true;
+                //            break;
+                //        }
+                //        else
+                //        {
+                //            digits[i] = 0;
+                //            int g = i / n;
+                //            output[g][i - (g * n)] = orderedSubsets[0];
+                //        }
+                //    }
+                //    else
+                //    {
+                //        int g = i / n;
+                //        output[g][i - (g * n)] = orderedSubsets[digits[i]];
+                //        break;
+                //    }
+                //}
+            }
+        }
+
         //this algorithm generates all possible matchings
         private static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
         {
