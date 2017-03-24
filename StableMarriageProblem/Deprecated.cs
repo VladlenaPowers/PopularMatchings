@@ -102,24 +102,6 @@ namespace StableMarriageProblem
         }
         
 
-        // This function returns a new array where the elements represent their index in the input array. If we
-        // think of the input array as a map this function reverses the map.
-        static int[] InvertIntArray(int[] arr)
-        {
-            int[] output = new int[arr.Length];
-            for (int i = 0; i < arr.Length; i++)
-            {
-                output[i] = -1;
-            }
-            for (int i = 0; i < arr.Length; i++)
-            {
-                if (arr[i] >= 0)
-                {
-                    output[arr[i]] = i;
-                }
-            }
-            return output;
-        }
 
 
 
