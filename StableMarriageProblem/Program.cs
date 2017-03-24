@@ -249,9 +249,85 @@ namespace PopularMatching
         //    });
         //}
 
-        static void Main(string[] args)
+        static void FindPrefLists()
         {
 
+            int[] emptyPrioritizedSet = new int[0] { };
+
+            foreach (var prefLists in RandomPreferenceLists(5, 92874))
+            {
+                var m = prefLists[0];
+                var w = prefLists[1];
+
+                ContinuousKavitha.Output cO = ContinuousKavitha.Run(m, w, emptyPrioritizedSet);
+                DiscreteKavitha.Output dO = DiscreteKavitha.Run(m, w, emptyPrioritizedSet);
+
+                if (!MatchingEqualityComparer.INSTANCE.Equals(cO.matching, dO.matching))
+                {
+                    var promotedMen = cO.men1;
+
+                    var nM = m.Where(i => true).ToArray();
+                    var nW = w.Select(pl => pl.Where(manI => !promotedMen.Contains(manI)).ToArray()).ToArray();
+
+                    foreach (var manI in promotedMen)
+                    {
+                        nM[manI] = emptyPrioritizedSet;
+                    }
+
+                    var promotedMenWomen = cO.matching.Where((wI, i) => promotedMen.Contains(i));
+
+                    foreach (var womanI in promotedMenWomen)
+                    {
+                        nW[womanI] = emptyPrioritizedSet;
+                    }
+
+                    nM = nM.Select(pl => pl.Where(womanI => !promotedMenWomen.Contains(womanI)).ToArray()).ToArray();
+
+                    var matching = DiscreteKavitha.GaleShapley(nW, nM);
+
+                    var fMatching = Utility.InvertIntArray(matching);
+
+                    bool failed = true;
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (cO.men0.Contains(i))
+                        {
+                            if (fMatching[i] != cO.matching[i])
+                            {
+                                failed = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!failed)
+                    {
+
+                        cO = ContinuousKavitha.Run(m, w, emptyPrioritizedSet);
+                        dO = DiscreteKavitha.Run(m, w, emptyPrioritizedSet);
+
+                        if (!MatchingEqualityComparer.INSTANCE.Equals(cO.matching, dO.matching))
+                        {
+                            Console.WriteLine("----------------------------- " + cO.matching.DefaultString() + " -------------------------------");
+                            Console.WriteLine("----------------------------- " + dO.matching.DefaultString() + " -------------------------------");
+
+                            Console.WriteLine();
+                            Console.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] men = new int [5][] {\n", ",\n", "\n};"));
+
+                            Console.WriteLine();
+                            Console.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] women = new int [5][] {\n", ",\n", "\n};"));
+                            Console.Read();
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            //FindPrefLists();
 
             int[][] men = new int[8][]
             {   new int[8] { 4,6,0,1,5,7,3,2 },
@@ -274,13 +350,13 @@ namespace PopularMatching
                 new int[8] { 6,4,1,0,7,5,3,2 },
                 new int[8] { 6,3,0,4,1,2,5,7 }
                         };
-
-
+            
 
             const bool USE_DISCRETE = true;
             
             var kavithaOutputs = new List<int[]>();
             var gKavithaOutputs = new List<int[]>();
+
 
             //Run Continuous Kavitha's Algorithm
             var cResults = new Dictionary<int[], List<BeforeAfter>>(MatchingEqualityComparer.INSTANCE);
