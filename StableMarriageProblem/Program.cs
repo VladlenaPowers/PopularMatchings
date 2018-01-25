@@ -238,7 +238,7 @@ namespace PopularMatching
             
             int[] emptyPrioritizedSet = new int[0] { };
 
-            foreach (var prefLists in RandomPreferenceLists(5, 92874))
+            foreach (var prefLists in RandomPreferenceLists(6, 92874))
             {
                 var m = prefLists[0];
                 var w = prefLists[1];
@@ -272,7 +272,7 @@ namespace PopularMatching
                     var fMatching = Utility.InvertIntArray(matching);
 
                     bool failed = true;
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < 6; i++)
                     {
                         if (cO.men0.Contains(i))
                         {
@@ -309,24 +309,94 @@ namespace PopularMatching
             }
         }
 
+        //static int[] UnmatchedMen(int[][] men, int[][] women, int[] c)
+        //{
+        //    int[] output = new int[men.Length];
+        //    for (int i = 0; i < c.Length; i++)
+        //    {
+        //        output[c[i]] = -1;
+        //    }
+        //    for (int i = 0; i < c.Length; i++)
+        //    {
+        //        int manI = c[i];
+
+        //        int[] manPrefList = men[manI];
+
+        //        for (int j = 0; j < manPrefList.Length; j++)
+        //        {
+        //            int womanI = manPrefList[j];
+
+        //            int[] womansPrefList = women[womanI];
+        //            if (womansPrefList.Length > 0)
+        //            {
+        //                int mostPreferredMan = womansPrefList[0];
+        //                if (c.Contains(mostPreferredMan))
+        //                {
+        //                    throw new Exception("Not possible");
+        //                }
+        //                else if (output[mostPreferredMan] == -1)
+        //                {
+        //                    output[mostPreferredMan] = womanI;
+        //                }
+        //                else
+        //                {
+        //                    int currentWomanOfMostPreferredMan = output[mostPreferredMan];
+        //                    if (Array.IndexOf(manPrefList, currentWomanOfMostPreferredMan) > Array.IndexOf(manPrefList, womanI))
+        //                    {
+        //                        output[mostPreferredMan] = womanI;
+        //                    }
+        //                }
+
+        //            }
+        //            else
+        //            {
+        //                throw new Exception("Preferences lists are not symmetric");
+        //            }
+        //        }
+        //    }
+        //}
+
+
         static void Main(string[] args)
         {
-            FindPrefLists();
-            
-             int[][] men = new int[5][]
-             {  new int[2] { 0,3 },
-                new int[2] { 0,1 },
-                new int[3] { 1,0,2 },
-                new int[3] { 0,3,4 },
-                new int[2] { 4,3 }
-             };
+            //FindPrefLists();
+
+            int[][] men = new int[5][]
+                           {  new int[5] { 4,3,0,1,2 },
+                new int[5] { 1,2,3,4,0 },
+                new int[4] { 1,3,0,4 },
+                new int[5] { 1,0,3,2,4 },
+                new int[5] { 4,3,1,0,2 }
+                           };
             int[][] women = new int[5][]
-            {   new int[4] { 2,3,0,1 },
-                new int[2] { 1,2 },
-                new int[1] { 2 },
-                new int[3] { 4,0,3 },
-                new int[2] { 3,4 }
+            {   new int[5] { 0,1,2,3,4 },
+                new int[5] { 1,4,0,3,2 },
+                new int[4] { 0,4,1,3 },
+                new int[5] { 3,4,2,0,1 },
+                new int[5] { 1,4,0,3,2 }
             };
+
+
+            //int[] c = new int[1]
+            //{
+            //    0
+            //};
+
+            //try
+            //{
+            //    int[] matching = UnmatchedMen(men, women, c);
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine("Exception: " + e.Message);
+            //}
+
+
+
+
+
+
+
 
             const bool USE_DISCRETE = true;
             
