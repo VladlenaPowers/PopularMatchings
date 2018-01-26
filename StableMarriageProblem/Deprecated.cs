@@ -226,32 +226,32 @@ namespace StableMarriageProblem
 
                 lock (Lock)
                 {
-                    Console.WriteLine("--------------------------------------------------------------------\n\n");
+                    Utility.WriteLine("--------------------------------------------------------------------\n\n");
 
-                    Console.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
+                    Utility.WriteLine("int[][] men = new int[" + men.Length + "][]\n{");
                     bool first = true;
                     foreach (var man in men)
                     {
                         if (!first)
                         {
-                            Console.WriteLine(",");
+                            Utility.WriteLine(",");
                         }
                         first = false;
                         Console.Write("new int[" + man.Length + "] " + CollectionToString(man));
                     }
-                    Console.WriteLine("};");
-                    Console.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
+                    Utility.WriteLine("};");
+                    Utility.WriteLine("int[][] women = new int[" + women.Length + "][]\n{");
                     first = true;
                     foreach (var woman in women)
                     {
                         if (!first)
                         {
-                            Console.WriteLine(",");
+                            Utility.WriteLine(",");
                         }
                         first = false;
                         Console.Write("new int[" + woman.Length + "] " + CollectionToString(woman));
                     }
-                    Console.WriteLine("};");
+                    Utility.WriteLine("};");
                     //break; 
                 }
             }
@@ -308,16 +308,16 @@ namespace StableMarriageProblem
             {
                 Console.Write("------------------------");
                 Console.Write(CollectionToString(uniqueMatchings[i]));
-                Console.WriteLine("------------------------");
+                Utility.WriteLine("------------------------");
                 for (int j = 0; j < prioritizedMen[i].Count; j++)
                 {
-                    Console.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
+                    Utility.WriteLine(format, CollectionToString(prioritizedMen[i][j]), CollectionToString(men1[i][j]));
                 }
-                Console.WriteLine();
+                Utility.WriteLine();
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Popular matchings:");
+            Utility.WriteLine();
+            Utility.WriteLine("Popular matchings:");
             foreach (var matching in popularMatchings)
             {
                 int perfectCount = 0;
@@ -353,7 +353,7 @@ namespace StableMarriageProblem
                         }
                     }
                 }
-                Console.WriteLine(format, CollectionToString(matching), perfectCount);
+                Utility.WriteLine(format, CollectionToString(matching), perfectCount);
             }
         }
 

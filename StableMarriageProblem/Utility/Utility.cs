@@ -3,11 +3,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace PopularMatching
 {
     public static class Utility
     {
+        public static TextWriter consoleFileStream = new StreamWriter("console.txt");
+
+        public static void WriteLine()
+        {
+            Console.WriteLine();
+            consoleFileStream.WriteLine();
+        }
+
+        public static void WriteLine(string str)
+        {
+            Console.WriteLine(str);
+            consoleFileStream.WriteLine(str);
+        }
+
+        public static void Write(string str)
+        {
+            Console.Write(str);
+            consoleFileStream.Write(str);
+        }
+
+        public static void WriteLine(string str, params object[] args)
+        {
+            Console.WriteLine(str, args);
+            consoleFileStream.WriteLine(str, args);
+        }
+
         // This function returns all integers in the sequence { 0, 1, 2, ... , n } that are not contained in the
         // arr parameter
         public static int[] ComplementIndicesArray(int[] arr, int n)
@@ -25,11 +52,19 @@ namespace PopularMatching
 
         public static string DefaultString<T>(this IEnumerable<T> arr)
         {
-            return CollectionToString(arr, "{", ", ", "}");
+            return CollectionToString(arr, "{", ",", "}");
+        }
+        public static string NewLineString<T>(this IEnumerable<T> arr)
+        {
+            return CollectionToString(arr, "", "\n", "");
+        }
+        public static string NewLineIndented<T>(this IEnumerable<T> arr)
+        {
+            return CollectionToString(arr.Select(i => "\t" + i), "", "\n", "");
         }
         public static string CollectionToString<T>(IEnumerable<T> arr, string start, string seperator, string end)
         {
-            return start + String.Join(seperator, arr) + end;
+            return start + String.Join(seperator, arr.Select(e => e.ToString().PadLeft(2))) + end;
         }
 
 

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,12 +16,67 @@ namespace PopularMatching
         public IEnumerable<int> after;
     }
 
+    struct PreferenceLists
+    {
+        public int[][] men;
+        public int[][] women;
+    }
+
+    struct Matchings
+    {
+        public int n;
+        public int min;
+        public int max;
+        public int[][] dominant;
+        public int[][] middle;
+        public int[][] stable;
+    }
+
+    struct Scenario
+    {
+        public bool ideal;
+        public PreferenceLists preferenceLists;
+        public Matchings matchings;
+    }
+
     public static class Program
     {
+        private static IEnumerable<PreferenceLists> RandomPreferenceListsByMen(int n, int maxManPrefListLength, int seed)
+        {
+            int[][] orderedSubsets = Utility.OrderedSubset(Enumerable.Range(0, n)).Select(ss => ss.ToArray()).Where(ss => ss.Length <= maxManPrefListLength).ToArray();
+
+            Random r = new Random(seed);
+
+            bool finished = false;
+            while (!finished)
+            {
+                var men = Enumerable.Range(0, n).Select(i => orderedSubsets[r.Next(orderedSubsets.Length)]).ToArray();
+
+                var women = Enumerable.Range(0, n).Select(i => new List<int>()).ToArray();
+
+                int[] menOrder = Enumerable.Range(0, n).OrderBy(x => r.Next()).ToArray();
+
+                for (int i = 0; i < n; i++)
+                {
+                    int manI = menOrder[i];
+                    for (int j = 0; j < men[manI].Length; j++)
+                    {
+                        int womanI = men[manI][j];
+                        women[womanI].Add(manI);
+                    }
+                }
+
+                yield return new PreferenceLists()
+                {
+                    men = men,
+                    women = women.Select(a => a.ToArray()).ToArray()
+                };
+            }
+        }
+
         private static IEnumerable<int[][][]> RandomPreferenceLists(int n, int seed)
         {
             int[][] orderedSubsets = Utility.OrderedSubset(Enumerable.Range(0, n)).Select(ss => ss.ToArray()).ToArray();
-            int digitMax = orderedSubsets.Length - 1;
 
             int[][][] output = new int[2][][];
             output[0] = new int[n][];
@@ -33,7 +91,7 @@ namespace PopularMatching
                 for (int i = 0; i < digitsTotal; i++)
                 {
                     int g = i / n;
-                    output[g][i - (g * n)] = orderedSubsets[r.Next(digitMax)];
+                    output[g][i - (g * n)] = orderedSubsets[r.Next(orderedSubsets.Length)];
                 }
 
                 var men = output[0];
@@ -292,14 +350,14 @@ namespace PopularMatching
 
                         if (!MatchingEqualityComparer.INSTANCE.Equals(cO.matching, dO.matching))
                         {
-                            Console.WriteLine("----------------------------- " + cO.matching.DefaultString() + " -------------------------------");
-                            Console.WriteLine("----------------------------- " + dO.matching.DefaultString() + " -------------------------------");
+                            Utility.WriteLine("----------------------------- " + cO.matching.DefaultString() + " -------------------------------");
+                            Utility.WriteLine("----------------------------- " + dO.matching.DefaultString() + " -------------------------------");
 
-                            Console.WriteLine();
-                            Console.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] men = new int [5][] {\n", ",\n", "\n};"));
+                            Utility.WriteLine();
+                            Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] men = new int [5][] {\n", ",\n", "\n};"));
 
-                            Console.WriteLine();
-                            Console.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] women = new int [5][] {\n", ",\n", "\n};"));
+                            Utility.WriteLine();
+                            Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" + pl.Count() + "] " + pl.DefaultString()), "int[][] women = new int [5][] {\n", ",\n", "\n};"));
                             Console.Read();
                         }
 
@@ -356,24 +414,255 @@ namespace PopularMatching
         //    }
         //}
 
+        /**
+         * Given two non-empty lists of matches this function will check if there exists a common element at the same index.
+         **/
+        static bool CommonAndIdenticalElement(int i, int[][] a, int[][] b, out int el)
+        {
+            int aEl;
+            if(!CommonAndIdenticalElement(i, a, out aEl))
+            {
+                el = -1;
+                return false;
+            }
+            int bEl;
+            if (!CommonAndIdenticalElement(i, b, out bEl))
+            {
+                el = -1;
+                return false;
+            }
+
+            if (aEl != bEl)
+            {
+                el = -1;
+                return false;
+            }
+            else
+            {
+                el = aEl;
+                return true;
+            }
+        }
+
+        /**
+         * Given a non-empty list of matches this function will check if there exists a common element at the same index.
+         **/
+        static bool CommonAndIdenticalElement(int i, int[][] arr, out int el)
+        {
+            el = arr[0][i];
+            for (int j = 1; j < arr.Length; j++)
+            {
+                int next = arr[j][i];
+                if (next != el)
+                    return false;
+            }
+            return true;
+        }
+
+        static bool AnyElementDoesNotEqual(int i, int[][] arr, int el)
+        {
+            for (int j = 0; j < arr.Length; j++)
+            {
+                if (arr[j][i] != el)
+                    return true;
+            }
+            return false;
+        }
+
+        static bool FilterFunction(Matchings matchings)
+        {
+
+            for (int manI = 0; manI < matchings.n; manI++)
+            {
+                int sharedWomanI;
+                if(matchings.dominant.Length > 0 && matchings.stable.Length > 0)
+                {
+                    if (!CommonAndIdenticalElement(manI, matchings.dominant, matchings.stable, out sharedWomanI))
+                        continue;
+                }
+                else if (matchings.stable.Length > 0)
+                {
+                    if (!CommonAndIdenticalElement(manI, matchings.stable, out sharedWomanI))
+                        continue;
+                }
+                else if (matchings.dominant.Length > 0 )
+                {
+                    if (!CommonAndIdenticalElement(manI, matchings.dominant, out sharedWomanI))
+                        continue;
+                }
+                else
+                {
+                    //there are no stable or dominant matchings
+                    continue;
+                }
+                
+                if(AnyElementDoesNotEqual(manI, matchings.middle, sharedWomanI))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+
+        }
+
+        static Matchings CreateMatchings(PreferenceLists preferenceLists)
+        {
+            var popularMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
+
+            var unmatchedCounts = popularMatchings.Select(matching => matching.Where(m => m == -1).Count()).ToArray();
+            int max = unmatchedCounts.Max();
+            int min = unmatchedCounts.Min();
+
+            return new Matchings()
+            {
+                n = preferenceLists.men.Length,
+                min = min,
+                max = max,
+                dominant = popularMatchings.Where((m, i) => unmatchedCounts[i] == min).ToArray(),
+                middle = popularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
+                stable = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray()
+            };
+        }
+
+        static IEnumerable<Scenario> ValidScenarios(IEnumerable<PreferenceLists> prefLists, int threadCount)
+        {
+            //foreach (var preferenceLists in prefLists)
+            //{
+            //    var matchings = CreateMatchings(preferenceLists);
+
+            //    yield return new Scenario()
+            //    {
+            //        ideal = FilterFunction(matchings),
+            //        preferenceLists = preferenceLists,
+            //        matchings = matchings
+            //    };
+            //}
+
+            //yield break;
+
+            BlockingCollection<PreferenceLists> input = new BlockingCollection<PreferenceLists>();
+            BlockingCollection<Scenario> output = new BlockingCollection<Scenario>();
+
+            var enumerator = prefLists.GetEnumerator();
+
+            for (int i = 0; i < (threadCount * 2); i++)
+            {
+                enumerator.MoveNext();
+                input.Add(enumerator.Current);
+            }
+
+            for (int threadI = 0; threadI < threadCount; threadI++)
+            {
+                Task.Factory.StartNew(() => {
+
+                    foreach (var preferenceLists in input.GetConsumingEnumerable())
+                    {
+                        var matchings = CreateMatchings(preferenceLists);
+
+                        output.Add(new Scenario()
+                        {
+                            ideal = FilterFunction(matchings),
+                            preferenceLists = preferenceLists,
+                            matchings = matchings
+                        });
+
+                    }
+
+                });
+            }
+            
+            foreach (var scenario in output.GetConsumingEnumerable())
+            {
+                enumerator.MoveNext();
+                input.Add(enumerator.Current);
+
+                if (scenario.ideal)
+                {
+                    yield return scenario;
+                }
+            }
+        }
+
+        static void Testing()
+        {
+            //foreach(var item in Utility.OrderedSubset(Enumerable.Range(0, 8)).Select(ss => ss.ToArray()).Where(ss => ss.Length <= 3))
+            //{
+            //    Utility.WriteLine(Utility.DefaultString(item));
+            //}
+
+            //Utility.WriteLine("done");
+
+            int n = 8;
+
+            var items = ValidScenarios(RandomPreferenceListsByMen(n, 2, 3211), 7);
+
+            foreach (var item in items)
+            {
+                Utility.WriteLine("men:");
+                Utility.WriteLine(Utility.NewLineString(item.preferenceLists.men.Select(Utility.DefaultString)));
+                Utility.WriteLine();
+                Utility.WriteLine("women:");
+                Utility.WriteLine(Utility.NewLineString(item.preferenceLists.women.Select(Utility.DefaultString)));
+                Utility.WriteLine();
+
+                Utility.WriteLine("# of unmatched men: [{0}, {1}]", item.matchings.min, item.matchings.max);
+                Utility.WriteLine();
+
+                Utility.WriteLine("Matchings:");
+
+                Utility.WriteLine("stable:");
+                Utility.WriteLine(Utility.NewLineIndented(item.matchings.stable.Select(Utility.DefaultString)));
+                Utility.WriteLine();
+
+                Utility.WriteLine("middle:");
+                Utility.WriteLine(Utility.NewLineIndented(item.matchings.middle.Select(Utility.DefaultString)));
+                Utility.WriteLine();
+
+                Utility.WriteLine("dominant:");
+                Utility.WriteLine(Utility.NewLineIndented(item.matchings.dominant.Select(Utility.DefaultString)));
+                Utility.WriteLine();
+
+                //Utility.WriteLine(Utility.CollectionToString(item.Select(m => Utility.CollectionToString(m.Select(h => Utility.DefaultString(h)), "", "\n", "")), "", "\n\n\n\n", ""));
+                Utility.WriteLine();
+                //Utility.Write("Continue?(y/n)");
+                //var cont = Console.ReadKey();
+                //if (cont.Key != ConsoleKey.Y)
+                //    break;
+                Utility.WriteLine();
+                Utility.consoleFileStream.Flush();
+            }
+            
+        }
+
 
         static void Main(string[] args)
         {
             //FindPrefLists();
 
-            int[][] men = new int[5][]
-                           {  new int[5] { 4,3,0,1,2 },
-                new int[5] { 1,2,3,4,0 },
-                new int[4] { 1,3,0,4 },
-                new int[5] { 1,0,3,2,4 },
-                new int[5] { 4,3,1,0,2 }
-                           };
-            int[][] women = new int[5][]
-            {   new int[5] { 0,1,2,3,4 },
-                new int[5] { 1,4,0,3,2 },
-                new int[4] { 0,4,1,3 },
-                new int[5] { 3,4,2,0,1 },
-                new int[5] { 1,4,0,3,2 }
+            Testing();
+            return;
+
+            int[][] men = new int[8][] {
+                new int[1] { 0 },
+                new int[2] { 0, 1 },
+                new int[3] { 3, 1, 2 },
+                new int[1] { 3 },
+                new int[1] { 4 },
+                new int[2] { 4, 5 },
+                new int[3] { 7, 5, 6 },
+                new int[1] { 7 }
+            };
+
+            int[][] women = new int[8][] {
+                new int[2] { 1, 0 },
+                new int[2] { 1, 2 },
+                new int[1] { 2 },
+                new int[2] { 2, 3 },
+                new int[2] { 5, 4 },
+                new int[2] { 5, 6 },
+                new int[1] { 6 },
+                new int[2] { 6, 7 }
             };
 
 
@@ -388,7 +677,7 @@ namespace PopularMatching
             //}
             //catch (Exception e)
             //{
-            //    Console.WriteLine("Exception: " + e.Message);
+            //    Utility.WriteLine("Exception: " + e.Message);
             //}
 
 
@@ -452,84 +741,84 @@ namespace PopularMatching
             }
 
 
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("Continuous Kavitha Algorithm:");
+            Utility.WriteLine();
+            Utility.WriteLine();
+            Utility.WriteLine("Continuous Kavitha Algorithm:");
 
             const string format = "{0,-32} :{1}";
             foreach (var kvPair in cResults)
             {
-                Console.WriteLine("----------------------------- " + kvPair.Key.DefaultString() + " -------------------------------");
-                Console.WriteLine(Utility.CollectionToString(kvPair.Value.Select((result) =>
+                Utility.WriteLine("----------------------------- " + kvPair.Key.DefaultString() + " -------------------------------");
+                Utility.WriteLine(Utility.CollectionToString(kvPair.Value.Select((result) =>
                 {
                     return string.Format(format, result.before.DefaultString(), result.after.DefaultString());
                 }), "", "\n", ""));
             }
 
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("Discrete Kavitha Algorithm:");
+            Utility.WriteLine();
+            Utility.WriteLine();
+            Utility.WriteLine();
+            Utility.WriteLine("Discrete Kavitha Algorithm:");
             foreach (var kvPair in dResults)
             {
-                Console.WriteLine("----------------------------- " + kvPair.Key.DefaultString() + " -------------------------------");
-                Console.WriteLine(Utility.CollectionToString(kvPair.Value.Select((result) =>
+                Utility.WriteLine("----------------------------- " + kvPair.Key.DefaultString() + " -------------------------------");
+                Utility.WriteLine(Utility.CollectionToString(kvPair.Value.Select((result) =>
                 {
                     return string.Format(format, result.before.DefaultString(), result.after.DefaultString());
                 }), "", "\n", ""));
             }
             
-            Console.WriteLine();
-            Console.WriteLine("Unique outputs:");
-            Console.WriteLine();
-            Console.WriteLine("Continuous Kavitha Algorithm:");
-            Console.WriteLine(Utility.CollectionToString(cResults.Keys.Select(key => key.DefaultString()), "", "\n", ""));
-            Console.WriteLine();
-            Console.WriteLine("Discrete Kavitha Algorithm:");
-            Console.WriteLine(Utility.CollectionToString(dResults.Keys.Select(key => key.DefaultString()), "", "\n", ""));
+            Utility.WriteLine();
+            Utility.WriteLine("Unique outputs:");
+            Utility.WriteLine();
+            Utility.WriteLine("Continuous Kavitha Algorithm:");
+            Utility.WriteLine(Utility.CollectionToString(cResults.Keys.Select(key => key.DefaultString()), "", "\n", ""));
+            Utility.WriteLine();
+            Utility.WriteLine("Discrete Kavitha Algorithm:");
+            Utility.WriteLine(Utility.CollectionToString(dResults.Keys.Select(key => key.DefaultString()), "", "\n", ""));
             
-            Console.WriteLine();
-            Console.WriteLine("Brute force popular matchings:");
-            Console.WriteLine(Utility.CollectionToString(ValidMatchings(men, women).PopularMatchings(men, women).Select(m => m.DefaultString()), "", "\n", ""));
+            Utility.WriteLine();
+            Utility.WriteLine("Brute force popular matchings:");
+            Utility.WriteLine(Utility.CollectionToString(ValidMatchings(men, women).PopularMatchings(men, women).Select(m => m.DefaultString()), "", "\n", ""));
 
 
-            Console.WriteLine();
-            Console.WriteLine("men:");
-            Console.WriteLine(Utility.CollectionToString(men.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
+            Utility.WriteLine();
+            Utility.WriteLine("men:");
+            Utility.WriteLine(Utility.CollectionToString(men.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
 
-            Console.WriteLine();
-            Console.WriteLine("women:");
-            Console.WriteLine(Utility.CollectionToString(women.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
+            Utility.WriteLine();
+            Utility.WriteLine("women:");
+            Utility.WriteLine(Utility.CollectionToString(women.Select((pl, i) => i + ": " + pl.DefaultString()), "", "\n", ""));
 
-            //Console.WriteLine();
-            //Console.WriteLine("popularMatchings:");
+            //Utility.WriteLine();
+            //Utility.WriteLine("popularMatchings:");
             //var popularMatchings = ValidMatchings(men, women).Distinct(MatchingEqualityComparer.INSTANCE).PopularMatchings(men, women);
             //foreach (var popularMatching in popularMatchings)
             //{
-            //    Console.WriteLine(popularMatching.DefaultString());
+            //    Utility.WriteLine(popularMatching.DefaultString());
             //}
 
-            //Console.WriteLine();
+            //Utility.WriteLine();
             //Console.Write("Filtering duplicate outputs ");
             //kavithaOutputs = kavithaOutputs.Distinct().ToList();
             //gKavithaOutputs = gKavithaOutputs.Distinct().ToList();
-            //Console.WriteLine("done");
+            //Utility.WriteLine("done");
 
-            //Console.WriteLine();
-            //Console.WriteLine("original:");
-            //Console.WriteLine(Utility.CollectionToString(kavithaOutputs.Select(list => list.DefaultString()), "", "\n", ""));
-            //Console.WriteLine();
-            //Console.WriteLine("general:");
-            //Console.WriteLine(Utility.CollectionToString(gKavithaOutputs.Select(list => list.DefaultString()), "", "\n", ""));
+            //Utility.WriteLine();
+            //Utility.WriteLine("original:");
+            //Utility.WriteLine(Utility.CollectionToString(kavithaOutputs.Select(list => list.DefaultString()), "", "\n", ""));
+            //Utility.WriteLine();
+            //Utility.WriteLine("general:");
+            //Utility.WriteLine(Utility.CollectionToString(gKavithaOutputs.Select(list => list.DefaultString()), "", "\n", ""));
 
-            //Console.WriteLine();
+            //Utility.WriteLine();
             //bool popSubsetOfOriginal = popularMatchings.All(a => kavithaOutputs.Contains(a, MatchingEqualityComparer.INSTANCE));
-            //Console.WriteLine("(popular matchings) ⊆(original Kavitha algorithm outputs)? " + ((popSubsetOfOriginal) ? "YES" : "NO"));
-            //Console.WriteLine();
+            //Utility.WriteLine("(popular matchings) ⊆(original Kavitha algorithm outputs)? " + ((popSubsetOfOriginal) ? "YES" : "NO"));
+            //Utility.WriteLine();
 
             //bool popSubsetOfGenKavitha = popularMatchings.All(a => gKavithaOutputs.Contains(a, MatchingEqualityComparer.INSTANCE));
-            //Console.WriteLine("(popular matchings) ⊆(general Kavitha algorithm outputs)? " + ((popSubsetOfGenKavitha) ? "YES" : "NO"));
-            //Console.WriteLine();
+            //Utility.WriteLine("(popular matchings) ⊆(general Kavitha algorithm outputs)? " + ((popSubsetOfGenKavitha) ? "YES" : "NO"));
+            //Utility.WriteLine();
 
             Console.Read();
         }
