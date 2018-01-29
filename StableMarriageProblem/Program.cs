@@ -16,29 +16,6 @@ namespace PopularMatching
         public IEnumerable<int> after;
     }
 
-    struct PreferenceLists
-    {
-        public int[][] men;
-        public int[][] women;
-    }
-
-    struct Matchings
-    {
-        public int n;
-        public int min;
-        public int max;
-        public int[][] dominant;
-        public int[][] middle;
-        public int[][] stable;
-    }
-
-    struct Scenario
-    {
-        public bool ideal;
-        public PreferenceLists preferenceLists;
-        public Matchings matchings;
-    }
-
     public static class Program
     {
         private static IEnumerable<PreferenceLists> RandomPreferenceListsByMen(int n, int maxManPrefListLength, int seed)
@@ -50,9 +27,12 @@ namespace PopularMatching
             bool finished = false;
             while (!finished)
             {
-                var men = Enumerable.Range(0, n).Select(i => orderedSubsets[r.Next(orderedSubsets.Length)]).ToArray();
 
-                var women = Enumerable.Range(0, n).Select(i => new List<int>()).ToArray();
+                for (int i = 0; i < n; i++)
+                {
+                    men[i] = orderedSubsets[r.Next(orderedSubsets.Length)];
+                    women[i] = new List<int>(n);
+                }
 
                 int[] menOrder = Enumerable.Range(0, n).OrderBy(x => r.Next()).ToArray();
 
@@ -417,16 +397,16 @@ namespace PopularMatching
         /**
          * Given two non-empty lists of matches this function will check if there exists a common element at the same index.
          **/
-        static bool CommonAndIdenticalElement(int i, int[][] a, int[][] b, out int el)
+        static bool CommonElement(int index, int[][] a, int[][] b, out int el)
         {
             int aEl;
-            if(!CommonAndIdenticalElement(i, a, out aEl))
+            if(!CommonElement(index, a, out aEl))
             {
                 el = -1;
                 return false;
             }
             int bEl;
-            if (!CommonAndIdenticalElement(i, b, out bEl))
+            if (!CommonElement(index, b, out bEl))
             {
                 el = -1;
                 return false;
@@ -447,63 +427,41 @@ namespace PopularMatching
         /**
          * Given a non-empty list of matches this function will check if there exists a common element at the same index.
          **/
-        static bool CommonAndIdenticalElement(int i, int[][] arr, out int el)
+        static bool CommonElement(int index, int[][] arr, out int el)
         {
-            el = arr[0][i];
+            el = arr[0][index];
             for (int j = 1; j < arr.Length; j++)
             {
-                int next = arr[j][i];
+                int next = arr[j][index];
                 if (next != el)
                     return false;
             }
             return true;
         }
-
-        static bool AnyElementDoesNotEqual(int i, int[][] arr, int el)
-        {
-            for (int j = 0; j < arr.Length; j++)
-            {
-                if (arr[j][i] != el)
-                    return true;
-            }
-            return false;
-        }
-
+        
         static bool FilterFunction(Matchings matchings)
         {
+            if ((matchings.middle.Length == 0) || (matchings.stable.Length == 0) || (matchings.dominant.Length == 0))
+            {
+                return false;
+            }
+
+            return true;
 
             for (int manI = 0; manI < matchings.n; manI++)
             {
                 int sharedWomanI;
-                if(matchings.dominant.Length > 0 && matchings.stable.Length > 0)
-                {
-                    if (!CommonAndIdenticalElement(manI, matchings.dominant, matchings.stable, out sharedWomanI))
-                        continue;
-                }
-                else if (matchings.stable.Length > 0)
-                {
-                    if (!CommonAndIdenticalElement(manI, matchings.stable, out sharedWomanI))
-                        continue;
-                }
-                else if (matchings.dominant.Length > 0 )
-                {
-                    if (!CommonAndIdenticalElement(manI, matchings.dominant, out sharedWomanI))
-                        continue;
-                }
-                else
-                {
-                    //there are no stable or dominant matchings
+                if (!CommonElement(manI, matchings.dominant, matchings.stable, out sharedWomanI))
                     continue;
-                }
-                
-                if(AnyElementDoesNotEqual(manI, matchings.middle, sharedWomanI))
+
+                for (int j = 0; j < matchings.middle.Length; j++)
                 {
-                    return true;
+                    if (matchings.middle[j][manI] != sharedWomanI)
+                        return true;
                 }
             }
 
             return false;
-
         }
 
         static Matchings CreateMatchings(PreferenceLists preferenceLists)
@@ -527,20 +485,6 @@ namespace PopularMatching
 
         static IEnumerable<Scenario> ValidScenarios(IEnumerable<PreferenceLists> prefLists, int threadCount)
         {
-            //foreach (var preferenceLists in prefLists)
-            //{
-            //    var matchings = CreateMatchings(preferenceLists);
-
-            //    yield return new Scenario()
-            //    {
-            //        ideal = FilterFunction(matchings),
-            //        preferenceLists = preferenceLists,
-            //        matchings = matchings
-            //    };
-            //}
-
-            //yield break;
-
             BlockingCollection<PreferenceLists> input = new BlockingCollection<PreferenceLists>();
             BlockingCollection<Scenario> output = new BlockingCollection<Scenario>();
 
@@ -586,49 +530,13 @@ namespace PopularMatching
 
         static void Testing()
         {
-            //foreach(var item in Utility.OrderedSubset(Enumerable.Range(0, 8)).Select(ss => ss.ToArray()).Where(ss => ss.Length <= 3))
-            //{
-            //    Utility.WriteLine(Utility.DefaultString(item));
-            //}
-
-            //Utility.WriteLine("done");
-
             int n = 8;
 
-            var items = ValidScenarios(RandomPreferenceListsByMen(n, 2, 3211), 7);
+            var items = ValidScenarios(RandomPreferenceListsByMen(n, 2, 273247), 8);
 
             foreach (var item in items)
             {
-                Utility.WriteLine("men:");
-                Utility.WriteLine(Utility.NewLineString(item.preferenceLists.men.Select(Utility.DefaultString)));
-                Utility.WriteLine();
-                Utility.WriteLine("women:");
-                Utility.WriteLine(Utility.NewLineString(item.preferenceLists.women.Select(Utility.DefaultString)));
-                Utility.WriteLine();
-
-                Utility.WriteLine("# of unmatched men: [{0}, {1}]", item.matchings.min, item.matchings.max);
-                Utility.WriteLine();
-
-                Utility.WriteLine("Matchings:");
-
-                Utility.WriteLine("stable:");
-                Utility.WriteLine(Utility.NewLineIndented(item.matchings.stable.Select(Utility.DefaultString)));
-                Utility.WriteLine();
-
-                Utility.WriteLine("middle:");
-                Utility.WriteLine(Utility.NewLineIndented(item.matchings.middle.Select(Utility.DefaultString)));
-                Utility.WriteLine();
-
-                Utility.WriteLine("dominant:");
-                Utility.WriteLine(Utility.NewLineIndented(item.matchings.dominant.Select(Utility.DefaultString)));
-                Utility.WriteLine();
-
-                //Utility.WriteLine(Utility.CollectionToString(item.Select(m => Utility.CollectionToString(m.Select(h => Utility.DefaultString(h)), "", "\n", "")), "", "\n\n\n\n", ""));
-                Utility.WriteLine();
-                //Utility.Write("Continue?(y/n)");
-                //var cont = Console.ReadKey();
-                //if (cont.Key != ConsoleKey.Y)
-                //    break;
+                Utility.WriteLine(item.ToString());
                 Utility.WriteLine();
                 Utility.consoleFileStream.Flush();
             }

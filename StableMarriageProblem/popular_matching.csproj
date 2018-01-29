@@ -52,6 +52,7 @@
     <Compile Include="Kavitha\DiscreteKavitha.cs" />
     <Compile Include="Matching\MatchingEqualityComparer.cs" />
     <Compile Include="Matching\MatchingPopularityComparer.cs" />
+    <Compile Include="Scenario.cs" />
     <Compile Include="Utility\PriorityQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Utility\Utility.cs" />
