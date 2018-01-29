@@ -27,6 +27,8 @@ namespace PopularMatching
             bool finished = false;
             while (!finished)
             {
+                var men = new int[n][];
+                var women = new List<int>[n];
 
                 for (int i = 0; i < n; i++)
                 {
