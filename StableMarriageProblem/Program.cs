@@ -155,7 +155,7 @@ namespace PopularMatching
             //i0 = the number of unmatched men
             //i1 = possible set of unmatched men~
             //i2 = unmatched man
-            var unmatchedMen = Enumerable.Range(0, men.Length + 1).Where(x => x == 0).Select(unmatchedMenCount => {
+            var unmatchedMen = Enumerable.Range(0, men.Length + 1).Select(unmatchedMenCount => {
                 return Enumerable.Range(0, men.Length).Subset().Where(i => i.Count() == unmatchedMenCount).Select(i => i.ToArray()).ToArray();
             }).ToArray();
 
