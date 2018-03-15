@@ -159,7 +159,7 @@ namespace PopularMatching
                 return Enumerable.Range(0, men.Length).Subset().Where(i => i.Count() == unmatchedMenCount).Select(i => i.ToArray()).ToArray();
             }).ToArray();
 
-            var matchedWomenSets = Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() /*<=*/== men.Length);
+            var matchedWomenSets = Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() /*<=*/<= men.Length);
 
             foreach (var matchedWomen in matchedWomenSets)
             {
@@ -445,7 +445,7 @@ namespace PopularMatching
         
         static bool FilterFunction(Matchings matchings)
         {
-            if ((matchings.middle.Length == 0) || (matchings.stable.Length == 0) || (matchings.dominant.Length == 0))
+            if ((matchings.middle.Length == 0) || (matchings.minSize.Length == 0) || (matchings.dominant.Length == 0))
             {
                 return false;
             }
@@ -455,7 +455,7 @@ namespace PopularMatching
             for (int manI = 0; manI < matchings.n; manI++)
             {
                 int sharedWomanI;
-                if (!CommonElement(manI, matchings.dominant, matchings.stable, out sharedWomanI))
+                if (!CommonElement(manI, matchings.dominant, matchings.minSize, out sharedWomanI))
                     continue;
 
                 for (int j = 0; j < matchings.middle.Length; j++)
@@ -476,14 +476,49 @@ namespace PopularMatching
             int max = unmatchedCounts.Max();
             int min = unmatchedCounts.Min();
 
+            var dominantCandidates = popularMatchings.Where((m, i) => unmatchedCounts[i] == min).ToArray();
+
+            List<int[]> dominant = new List<int[]>();
+            List<int[]> maxSizeNonDominant = new List<int[]>();
+            var popularityComparer = new MatchingPopularityComparer(preferenceLists.men, preferenceLists.women);
+
+            foreach (var candidate in dominantCandidates)
+            {
+                var unmatchedMen = candidate.Where(x => x == -1).Count();
+
+                var isMaxSizeNonDominant = ValidMatchings(preferenceLists.men, preferenceLists.women).Any(validMatching => {
+
+                    var result = popularityComparer.Compare(candidate, validMatching);
+
+                    if (result == 0)
+                    {
+                        var otherUnmatched = validMatching.Where(x => x == -1).Count();
+
+                        if (unmatchedMen > otherUnmatched)
+                        {
+                            maxSizeNonDominant.Add(candidate);
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+
+                if(!isMaxSizeNonDominant)
+                {
+                    dominant.Add(candidate);
+                }
+            }
+
             return new Matchings()
             {
                 n = preferenceLists.men.Length,
                 min = min,
                 max = max,
-                dominant = popularMatchings.Where((m, i) => unmatchedCounts[i] == min).ToArray(),
+                dominant = dominant.ToArray(),
                 middle = popularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
-                stable = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray()
+                minSize = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray(),
+                maxSizeNonDominant = maxSizeNonDominant.ToArray()
             };
         }
 
@@ -585,19 +620,47 @@ namespace PopularMatching
             //     new int[3] { 6, 7, 11 }
             // };
 
-            int[][] men = new int[4][]
-           {   new int[1] { 0 },
-                new int[2] { 0, 1 },
-                new int[3] { 3, 1, 2 },
-                new int[1] { 3 }
-           };
-
-            int[][] women = new int[4][]
-            {   new int[2] { 1, 0 },
-                new int[2] { 1, 2 },
-                new int[1] { 2 },
-                new int[2] { 2, 3 }
+            int[][] men = new int[7][]
+            {   new int[2] { 1,0 },
+                new int[4] { 0,5,1,2 },
+                new int[3] { 3,2,1 },
+                new int[2] { 2,3 },
+                new int[3] { 2,5,4 },
+                new int[1] { 5 },
+                new int[2] { 3,6 }
             };
+
+            int[][] women = new int[7][]
+            {   new int[2] { 0,1 },
+                new int[3] { 2,1,0 },
+                new int[4] { 1,2,4,3 },
+                new int[3] { 6,3,2 },
+                new int[1] { 4 },
+                new int[3] { 4,1,5 },
+                new int[1] { 6 }
+            };
+
+
+            PreferenceLists pl2 = new PreferenceLists()
+            {
+                men = men,
+                women = women
+            };
+
+            Matchings matchings = CreateMatchings(pl2);
+
+            Scenario s = new Scenario()
+            {
+                matchings = matchings,
+                preferenceLists = pl2,
+                ideal = true
+            };
+
+            Console.WriteLine(s.ToString());
+
+            Console.Read();
+
+            return;
 
 
             //int[] c = new int[1]

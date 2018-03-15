@@ -19,7 +19,8 @@ namespace PopularMatching
         public int max;
         public int[][] dominant;
         public int[][] middle;
-        public int[][] stable;
+        public int[][] maxSizeNonDominant;
+        public int[][] minSize;
     }
 
     struct Scenario
@@ -45,8 +46,12 @@ namespace PopularMatching
 
             sb.AppendLine("Matchings:");
 
-            sb.AppendLine("stable:");
-            sb.AppendLine(Utility.NewLineIndented(matchings.stable.Select(Utility.DefaultString)));
+            sb.AppendLine("minSize:");
+            sb.AppendLine(Utility.NewLineIndented(matchings.minSize.Select(Utility.DefaultString)));
+            sb.AppendLine();
+
+            sb.AppendLine("maxSizeNonDominant:");
+            sb.AppendLine(Utility.NewLineIndented(matchings.maxSizeNonDominant.Select(Utility.DefaultString)));
             sb.AppendLine();
 
             sb.AppendLine("middle:");
