@@ -18,6 +18,7 @@ namespace PopularMatching
         public int min;
         public int max;
         public int[][] dominant;
+        public int[][][] dominantPlusPlusEdges;
         public int[][] middle;
         public int[][] maxSizeNonDominant;
         public int[][] minSize;
@@ -59,7 +60,19 @@ namespace PopularMatching
             sb.AppendLine();
 
             sb.AppendLine("dominant:");
-            sb.AppendLine(Utility.NewLineIndented(matchings.dominant.Select(Utility.DefaultString)));
+            sb.AppendLine(Utility.NewLineIndented(matchings.dominant.Zip(matchings.dominantPlusPlusEdges, (matching, edges) =>
+            {
+                if(edges.Length > 0)
+                {
+                    Func<int[], string> edgeStringer = arr => Utility.CollectionToString(arr, "(", ", ", ")");
+                    return Utility.DefaultString(matching) + ":" + Utility.CollectionToString(edges.Select(edgeStringer), "", ", ", "");
+                }
+                else
+                {
+                    return Utility.DefaultString(matching);
+                }
+
+            })));
             sb.AppendLine();
 
             return sb.ToString();

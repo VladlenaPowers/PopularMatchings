@@ -468,6 +468,61 @@ namespace PopularMatching
             return false;
         }
 
+        static Func<int[], int[][]> PlusPlusEdgeFinder(PreferenceLists preferenceLists)
+        {
+            return (int[] matching) =>
+            {
+                int[] womenMatching = new int[preferenceLists.women.Length];
+                for (int i = 0; i < womenMatching.Length; i++)
+                    womenMatching[i] = -1;
+                for (int i = 0; i < matching.Length; i++)
+                {
+                    var woman = matching[i];
+                    if (woman > 0)
+                        womenMatching[matching[i]] = i;
+                }
+
+                List<int[]> edges = new List<int[]>();
+
+                for(int i = 0; i < matching.Length; i++)
+                {
+                    int matchedWoman = matching[i];
+                    
+                    for(int j = 0; j < preferenceLists.men[i].Length; j++)
+                    {
+                        int preferredWoman = preferenceLists.men[i][j];
+
+                        if (preferredWoman == matchedWoman)
+                            break;
+
+                        var womanPrefList = preferenceLists.women[preferredWoman];
+
+                        int womanMatchedMan = womenMatching[preferredWoman];
+
+                        if (womanMatchedMan < 0)
+                            break;
+                        else
+                        {
+                            int matchedRank = 0;
+                            while (matchedRank < womanPrefList.Length && womanPrefList[matchedRank] != womanMatchedMan)
+                                matchedRank++;
+
+                            int currManRank = 0;
+                            while (currManRank < womanPrefList.Length && womanPrefList[currManRank] != i)
+                                currManRank++;
+
+                            if (currManRank < matchedRank)
+                            {
+                                edges.Add(new int[2] { i, preferredWoman });
+                            }
+                        }
+                    }
+                }
+
+                return edges.ToArray();
+            };
+        }
+
         static Matchings CreateMatchings(PreferenceLists preferenceLists)
         {
             var popularMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
@@ -516,6 +571,7 @@ namespace PopularMatching
                 min = min,
                 max = max,
                 dominant = dominant.ToArray(),
+                dominantPlusPlusEdges = dominant.Select(PlusPlusEdgeFinder(preferenceLists)).ToArray(),
                 middle = popularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
                 minSize = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray(),
                 maxSizeNonDominant = maxSizeNonDominant.ToArray()
@@ -560,7 +616,7 @@ namespace PopularMatching
                 enumerator.MoveNext();
                 input.Add(enumerator.Current);
 
-                if (scenario.ideal)
+                if (scenario.ideal && scenario.matchings.maxSizeNonDominant.Length > 0)
                 {
                     yield return scenario;
                 }
@@ -569,9 +625,9 @@ namespace PopularMatching
 
         static void Testing()
         {
-            int n = 8;
+            int n = 5;
 
-            var items = ValidScenarios(RandomPreferenceListsByMen(n, 2, 273247), 8);
+            var items = ValidScenarios(RandomPreferenceListsByMen(n, 3, 273247), 8);
 
             foreach (var item in items)
             {
@@ -587,8 +643,8 @@ namespace PopularMatching
         {
             //FindPrefLists();
 
-            //Testing();
-            //return;
+            Testing();
+            return;
 
             // int[][] men = new int[12][]
             //{    new int[3] { 0, 4, 5 },
@@ -620,26 +676,30 @@ namespace PopularMatching
             //     new int[3] { 6, 7, 11 }
             // };
 
-            int[][] men = new int[7][]
-            {   new int[2] { 1,0 },
-                new int[4] { 0,5,1,2 },
-                new int[3] { 3,2,1 },
-                new int[2] { 2,3 },
-                new int[3] { 2,5,4 },
-                new int[1] { 5 },
-                new int[2] { 3,6 }
-            };
-
-            int[][] women = new int[7][]
+            int[][] men = new int[10][]
+             {  new int[2] { 1,0 },
+                new int[2] { 0,1 },
+                new int[3] { 1,2,5 },
+                new int[3] { 5,1,2 },
+                new int[5] { 1,2,6,4,3 },
+                new int[5] { 3,1,2,6,4 },
+                new int[3] { 6,7,8 },
+                new int[3] { 8,6,7 },
+                new int[3] { 9,7,6 },
+                new int[3] { 7,6,9 }
+             };
+            int[][] women = new int[10][]
             {   new int[2] { 0,1 },
-                new int[3] { 2,1,0 },
-                new int[4] { 1,2,4,3 },
-                new int[3] { 6,3,2 },
-                new int[1] { 4 },
-                new int[3] { 4,1,5 },
-                new int[1] { 6 }
+                new int[5] { 5,3,4,2,0 },
+                new int[4] { 5,3,4,2 },
+                new int[2] { 4,5 },
+                new int[2] { 5,4 },
+                new int[2] { 2,3 },
+                new int[6] { 5,8,6,4,9,7 },
+                new int[4] { 8,6,9,7},
+                new int[2] { 7,6 },
+                new int[2] { 9,8 }
             };
-
 
             PreferenceLists pl2 = new PreferenceLists()
             {
