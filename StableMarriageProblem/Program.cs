@@ -615,19 +615,20 @@ namespace PopularMatching
             {
                 enumerator.MoveNext();
                 input.Add(enumerator.Current);
+                yield return scenario;
 
-                if (scenario.ideal && scenario.matchings.maxSizeNonDominant.Length > 0)
-                {
-                    yield return scenario;
-                }
+                //if (scenario.ideal && scenario.matchings.maxSizeNonDominant.Length > 0)
+                //{
+                //    yield return scenario;
+                //}
             }
         }
 
         static void Testing()
         {
-            int n = 5;
+            int n = 7;
 
-            var items = ValidScenarios(RandomPreferenceListsByMen(n, 3, 273247), 8);
+            var items = ValidScenarios(RandomPreferenceListsByMen(n, 4, 273247), 8);
 
             foreach (var item in items)
             {
@@ -668,10 +669,10 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            //FindPrefLists();
+            //6FindPrefLists();
 
-            Testing();
-            return;
+            //Testing();
+            //return;
 
             // int[][] men = new int[12][]
             //{    new int[3] { 0, 4, 5 },
@@ -703,30 +704,22 @@ namespace PopularMatching
             //     new int[3] { 6, 7, 11 }
             // };
 
-            int[][] men = new int[10][]
-             {  new int[2] { 1,0 },
-                new int[2] { 0,1 },
-                new int[3] { 1,2,5 },
-                new int[3] { 5,1,2 },
-                new int[5] { 1,2,6,4,3 },
-                new int[5] { 3,1,2,6,4 },
-                new int[3] { 6,7,8 },
-                new int[3] { 8,6,7 },
-                new int[3] { 9,7,6 },
-                new int[3] { 7,6,9 }
-             };
-            int[][] women = new int[10][]
-            {   new int[2] { 0,1 },
-                new int[5] { 5,3,4,2,0 },
-                new int[4] { 5,3,4,2 },
-                new int[2] { 4,5 },
-                new int[2] { 5,4 },
-                new int[2] { 2,3 },
-                new int[6] { 5,8,6,4,9,7 },
-                new int[4] { 8,6,9,7},
-                new int[2] { 7,6 },
-                new int[2] { 9,8 }
+            int[][] men = new int[5][]
+            {   new int[2] { 1,0 },
+                new int[3] { 1,2,0 },
+                new int[3] { 4,2,3 },
+                new int[2] { 3,2 },
+                new int[2] { 4,0 }
             };
+
+            int[][] women = new int[5][]
+            {   new int[3] { 0,4,1 },
+                new int[2] { 0,1 },
+                new int[3] { 3,1,2 },
+                new int[2] { 3,2 },
+                new int[2] { 4,2 }
+            };
+
 
             PreferenceLists pl2 = new PreferenceLists()
             {
