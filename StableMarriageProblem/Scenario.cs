@@ -75,6 +75,8 @@ namespace PopularMatching
             })));
             sb.AppendLine();
 
+            sb.AppendLine(Program.makePolytopeExp(preferenceLists.men, matchings.minSize));
+
             return sb.ToString();
         }
     }

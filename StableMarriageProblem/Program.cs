@@ -638,6 +638,33 @@ namespace PopularMatching
             
         }
 
+        static BitArray getActiveEdges(int[][] menPrefList, int[] matching)
+        {
+            int length = menPrefList.Select(l => l.Length).Sum() + 1;
+            BitArray output = new BitArray(length);
+            output[0] = true;
+
+            int x = 1;
+            for (int i = 0; i < menPrefList.Length; i++)
+            {
+                for (int j = 0; j < menPrefList[i].Length; j++)
+                {
+                    output[x++] = matching[i] == menPrefList[i][j];
+                }
+            }
+
+            return output;
+        }
+
+        public static string makePolytopeExp(int[][] menPrefList, IEnumerable<int[]> matchings)
+        {
+            var arrStrings = matchings
+                .Select(m => getActiveEdges(menPrefList, m))
+                .Select(ba => Enumerable.Range(0, ba.Length).Select(i => ba[i] ? 1 : 0).ToArray())
+                .Select(a => Utility.CollectionToString(a, "[", ",", "]"));
+
+            return "new Polytope(POINTS=>" + Utility.CollectionToString(arrStrings, "[", ",", "]") + ")";
+        }
 
         static void Main(string[] args)
         {
