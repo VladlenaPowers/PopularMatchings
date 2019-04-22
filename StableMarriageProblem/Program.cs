@@ -232,6 +232,41 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
+        private static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
+        {
+            ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
+
+            int[][] matchingsArray = matchings.ToArray();
+
+            List<int[]> output = new List<int[]>();
+            int[][] matchingsArr = matchings.ToArray();
+            for (int i = 0; i < matchingsArr.Length; i++)
+            {
+                bool paretoOptimal = true;
+                for (int j = 0; j < matchingsArr.Length; j++)
+                {
+                    if (i != j)
+                    {
+                        if (comparer.Compare(matchingsArr[i], matchingsArr[j]) < 0)
+                        {
+                            paretoOptimal = false;
+                            break;
+                        }
+                    }
+                }
+                if (paretoOptimal)
+                {
+                    output.Add(matchingsArr[i]);
+                }
+            }
+            return output;
+
+            //return matchingsArray.Where(matching => {
+            //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
+            //});
+        }
+
+        //returns all of the popular matchings for a given set of matchings
         private static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
             MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
@@ -274,6 +309,54 @@ namespace PopularMatching
         //        return Matching.stableComparer.Compare(min, popularMatching) == 0;
         //    });
         //}
+
+        static void DoTheThing()
+        {
+
+            foreach (var prefLists in RandomPreferenceLists(6, 8768))
+            {
+                var m = prefLists[0];
+                var w = prefLists[1];
+
+                var popularMatchings = ValidMatchings(m, w).PopularMatchings(m, w).ToArray();
+
+                if (popularMatchings.Length > 1)
+                    continue;
+
+                var paretoOptimalMatchings = ValidMatchings(m, w).ParetoOptimalMatchings(m, w);
+
+
+                //bool anyTheSame = false;
+                //foreach (var popMatch in popularMatchings)
+                //{
+                //    foreach (var paretoMatch in paretoOptimalMatchings)
+                //    {
+                //        if (MatchingEqualityComparerByEdges.INSTANCE.Equals(popMatch, paretoMatch))
+                //        {
+                //            anyTheSame = true;
+                //            break;
+                //        }
+                //    }
+
+                //    if (anyTheSame)
+                //        break;
+                //}
+
+                var intersection = popularMatchings.Intersect(paretoOptimalMatchings, MatchingEqualityComparer.INSTANCE);
+
+                if(!intersection.Any())
+                {
+                    Utility.WriteLine("----------------------------- Pref list found -------------------------------");
+
+                    Utility.WriteLine();
+                    Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [4][] {\n", ",\n", "\n};"));
+
+                    Utility.WriteLine();
+                    Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" +( pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [4][] {\n", ",\n", "\n};"));
+                    Console.Read();
+                }
+            }
+        }
 
         static void FindPrefLists()
         {
@@ -478,8 +561,8 @@ namespace PopularMatching
                 for (int i = 0; i < matching.Length; i++)
                 {
                     var woman = matching[i];
-                    if (woman > 0)
-                        womenMatching[matching[i]] = i;
+                    if (woman >= 0)
+                        womenMatching[woman] = i;
                 }
 
                 List<int[]> edges = new List<int[]>();
@@ -526,6 +609,7 @@ namespace PopularMatching
         static Matchings CreateMatchings(PreferenceLists preferenceLists)
         {
             var popularMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
+            var paretoOptimalMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).ParetoOptimalMatchings(preferenceLists.men, preferenceLists.women).ToArray();
 
             var unmatchedCounts = popularMatchings.Select(matching => matching.Where(m => m == -1).Count()).ToArray();
             int max = unmatchedCounts.Max();
@@ -574,7 +658,8 @@ namespace PopularMatching
                 dominantPlusPlusEdges = dominant.Select(PlusPlusEdgeFinder(preferenceLists)).ToArray(),
                 middle = popularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
                 minSize = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray(),
-                maxSizeNonDominant = maxSizeNonDominant.ToArray()
+                maxSizeNonDominant = maxSizeNonDominant.ToArray(),
+                paretoOptimalMatchings = paretoOptimalMatchings
             };
         }
 
@@ -669,6 +754,9 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
+            DoTheThing();
+
+            return;
             //6FindPrefLists();
 
             //Testing();
@@ -704,21 +792,19 @@ namespace PopularMatching
             //     new int[3] { 6, 7, 11 }
             // };
 
-            int[][] men = new int[5][]
-            {   new int[2] { 1,0 },
-                new int[3] { 1,2,0 },
-                new int[3] { 4,2,3 },
-                new int[2] { 3,2 },
-                new int[2] { 4,0 }
-            };
+            int[][] men = new int[4][] {
+        new int [2] { 3, 0},
+        new int [3] { 0, 2, 3},
+        new int [3] { 2, 0, 3},
+        new int [2] { 0, 2}
+};
 
-            int[][] women = new int[5][]
-            {   new int[3] { 0,4,1 },
-                new int[2] { 0,1 },
-                new int[3] { 3,1,2 },
-                new int[2] { 3,2 },
-                new int[2] { 4,2 }
-            };
+            int[][] women = new int[4][] {
+        new int [4] { 2, 3, 0, 1},
+        new int [0] {},
+        new int [3] { 3, 1, 2},
+        new int [3] { 1, 0, 2}
+};
 
 
             PreferenceLists pl2 = new PreferenceLists()

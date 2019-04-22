@@ -22,6 +22,7 @@ namespace PopularMatching
         public int[][] middle;
         public int[][] maxSizeNonDominant;
         public int[][] minSize;
+        public int[][] paretoOptimalMatchings;
     }
 
     struct Scenario
@@ -75,7 +76,11 @@ namespace PopularMatching
             })));
             sb.AppendLine();
 
-            sb.AppendLine(Program.makePolytopeExp(preferenceLists.men, matchings.minSize));
+            //sb.AppendLine(Program.makePolytopeExp(preferenceLists.men, matchings.dominant));
+
+            sb.AppendLine("paretoOptimalMatchings:");
+            sb.AppendLine(Utility.NewLineIndented(matchings.paretoOptimalMatchings.Select(Utility.DefaultString)));
+            sb.AppendLine();
 
             return sb.ToString();
         }
