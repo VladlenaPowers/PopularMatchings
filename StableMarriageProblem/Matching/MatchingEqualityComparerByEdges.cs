@@ -29,7 +29,7 @@ namespace PopularMatching
             int output = 0;
             for (int i = 0; i < obj.Length; i++)
             {
-                output += i * obj[i];
+                output += obj[i];
             }
             return output;
         }

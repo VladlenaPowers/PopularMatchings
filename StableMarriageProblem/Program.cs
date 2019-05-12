@@ -60,9 +60,6 @@ namespace PopularMatching
         {
             int[][] orderedSubsets = Utility.OrderedSubset(Enumerable.Range(0, n)).Select(ss => ss.ToArray()).ToArray();
 
-            int[][][] output = new int[2][][];
-            output[0] = new int[n][];
-            output[1] = new int[n][];
 
             Random r = new Random(seed);
             
@@ -70,6 +67,11 @@ namespace PopularMatching
             bool finished = false;
             while (!finished)
             {
+
+                int[][][] output = new int[2][][];
+                output[0] = new int[n][];
+                output[1] = new int[n][];
+
                 for (int i = 0; i < digitsTotal; i++)
                 {
                     int g = i / n;
@@ -232,22 +234,18 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
-        private static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
+        private static IEnumerable<int[]> ParetoOptimalMatchings(this int[][] matchings, int[][] men, int[][] women)
         {
             ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
-
-            int[][] matchingsArray = matchings.ToArray();
-
-            List<int[]> output = new List<int[]>();
-            int[][] matchingsArr = matchings.ToArray();
-            for (int i = 0; i < matchingsArr.Length; i++)
+            
+            for (int i = 0; i < matchings.Length; i++)
             {
                 bool paretoOptimal = true;
-                for (int j = 0; j < matchingsArr.Length; j++)
+                for (int j = 0; j < matchings.Length; j++)
                 {
                     if (i != j)
                     {
-                        if (comparer.Compare(matchingsArr[i], matchingsArr[j]) < 0)
+                        if (comparer.Compare(matchings[i], matchings[j]) < 0)
                         {
                             paretoOptimal = false;
                             break;
@@ -256,10 +254,9 @@ namespace PopularMatching
                 }
                 if (paretoOptimal)
                 {
-                    output.Add(matchingsArr[i]);
+                    yield return matchings[i];
                 }
             }
-            return output;
 
             //return matchingsArray.Where(matching => {
             //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
@@ -267,22 +264,18 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
-        private static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
+        private static IEnumerable<int[]> PopularMatchings(this int[][] matchings, int[][] men, int[][] women)
         {
             MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
-
-            int[][] matchingsArray = matchings.ToArray();
-
-            List<int[]> output = new List<int[]>();
-            int[][] matchingsArr = matchings.ToArray();
-            for (int i = 0; i < matchingsArr.Length; i++)
+            
+            for (int i = 0; i < matchings.Length; i++)
             {
                 bool popular = true;
-                for (int j = 0; j < matchingsArr.Length; j++)
+                for (int j = 0; j < matchings.Length; j++)
                 {
                     if (i != j)
                     {
-                        if (comparer.Compare(matchingsArr[i], matchingsArr[j]) < 0)
+                        if (comparer.Compare(matchings[i], matchings[j]) < 0)
                         {
                             popular = false;
                             break;
@@ -291,10 +284,9 @@ namespace PopularMatching
                 }
                 if (popular)
                 {
-                    output.Add(matchingsArr[i]);
+                    yield return matchings[i];
                 }
             }
-            return output;
 
             //return matchingsArray.Where(matching => {
             //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
@@ -312,50 +304,67 @@ namespace PopularMatching
 
         static void DoTheThing()
         {
+            const int size = 4;
 
-            foreach (var prefLists in RandomPreferenceLists(6, 8768))
-            {
+            var randomPrefLists = RandomPreferenceLists(size, 8754128);
+
+            //randomPrefLists = randomPrefLists.Skip(164160);
+
+            var customPartitioner = Partitioner.Create(randomPrefLists);
+
+            int count = 0;
+
+            int sampleRateMS = 10000;
+
+            Console.Write("\n\n\n");
+
+            var myTimer = new System.Timers.Timer();
+            myTimer.Elapsed += (sender, e) => {
+                Console.SetCursorPosition(0, Console.CursorTop - 3);
+                Console.WriteLine(("rate: " + (count * 1000.0f / (float)sampleRateMS) + "/s").PadRight(Console.BufferWidth - 1, ' '));
+                Console.WriteLine(("rate: " + (count * 1000.0f / (float)sampleRateMS) + "/s").PadRight(Console.BufferWidth - 1, ' '));
+                Console.WriteLine(("rate: " + (count * 1000.0f / (float)sampleRateMS) + "/s").PadRight(Console.BufferWidth - 1, ' '));
+                count = 0;
+            };
+            myTimer.Interval = sampleRateMS;
+            myTimer.Start();
+
+            var passed = ParallelEnumerable.Where(customPartitioner.AsParallel(), prefLists => {
+
+                count++;
+
                 var m = prefLists[0];
                 var w = prefLists[1];
 
-                var popularMatchings = ValidMatchings(m, w).PopularMatchings(m, w).ToArray();
+                var vMatchings = ValidMatchings(m, w).ToArray();
 
-                if (popularMatchings.Length > 1)
-                    continue;
+                var popularMatchings = vMatchings.PopularMatchings(m, w).ToArray();
 
-                var paretoOptimalMatchings = ValidMatchings(m, w).ParetoOptimalMatchings(m, w);
+                if (popularMatchings.Length != 1)
+                    return false;
+
+                var paretoOptimalMatchings = vMatchings.ParetoOptimalMatchings(m, w);
+
+                return !paretoOptimalMatchings.Any(paretoM => popularMatchings.Contains(paretoM, MatchingEqualityComparerByEdges.INSTANCE));
+            });
+
+            passed.ForAll(prefLists => {
+
+                var m = prefLists[0];
+                var w = prefLists[1];
+
+                Utility.WriteLine("----------------------------- Pref list found -------------------------------");
+
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [" + m.Length + "][] {\n", ",\n", "\n};"));
+
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [" + w.Length + "][] {\n", ",\n", "\n};"));
 
 
-                //bool anyTheSame = false;
-                //foreach (var popMatch in popularMatchings)
-                //{
-                //    foreach (var paretoMatch in paretoOptimalMatchings)
-                //    {
-                //        if (MatchingEqualityComparerByEdges.INSTANCE.Equals(popMatch, paretoMatch))
-                //        {
-                //            anyTheSame = true;
-                //            break;
-                //        }
-                //    }
+                Console.Write("\n\n\n");
 
-                //    if (anyTheSame)
-                //        break;
-                //}
-
-                var intersection = popularMatchings.Intersect(paretoOptimalMatchings, MatchingEqualityComparer.INSTANCE);
-
-                if(!intersection.Any())
-                {
-                    Utility.WriteLine("----------------------------- Pref list found -------------------------------");
-
-                    Utility.WriteLine();
-                    Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [4][] {\n", ",\n", "\n};"));
-
-                    Utility.WriteLine();
-                    Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" +( pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [4][] {\n", ",\n", "\n};"));
-                    Console.Read();
-                }
-            }
+            });
         }
 
         static void FindPrefLists()
@@ -608,8 +617,9 @@ namespace PopularMatching
 
         static Matchings CreateMatchings(PreferenceLists preferenceLists)
         {
-            var popularMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
-            var paretoOptimalMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).ParetoOptimalMatchings(preferenceLists.men, preferenceLists.women).ToArray();
+            var vMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).ToArray();
+            var popularMatchings = vMatchings.PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
+            var paretoOptimalMatchings = vMatchings.ParetoOptimalMatchings(preferenceLists.men, preferenceLists.women).ToArray();
 
             var unmatchedCounts = popularMatchings.Select(matching => matching.Where(m => m == -1).Count()).ToArray();
             int max = unmatchedCounts.Max();
@@ -754,9 +764,12 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            DoTheThing();
+            if (true)
+            {
+                DoTheThing();
+                return;
+            }
 
-            return;
             //6FindPrefLists();
 
             //Testing();
@@ -792,18 +805,20 @@ namespace PopularMatching
             //     new int[3] { 6, 7, 11 }
             // };
 
-            int[][] men = new int[4][] {
-        new int [2] { 3, 0},
-        new int [3] { 0, 2, 3},
-        new int [3] { 2, 0, 3},
-        new int [2] { 0, 2}
+            int[][] men = new int[5][] {
+        new int [5] { 0, 4, 3, 1, 2},
+        new int [5] { 1, 2, 3, 4, 0},
+        new int [5] { 2, 3, 0, 4, 1},
+        new int [4] { 0, 2, 4, 1},
+        new int [5] { 3, 0, 4, 2, 1}
 };
 
-            int[][] women = new int[4][] {
-        new int [4] { 2, 3, 0, 1},
-        new int [0] {},
-        new int [3] { 3, 1, 2},
-        new int [3] { 1, 0, 2}
+            int[][] women = new int[5][] {
+        new int [5] { 2, 4, 0, 1, 3},
+        new int [5] { 2, 0, 3, 1, 4},
+        new int [5] { 3, 2, 0, 4, 1},
+        new int [4] { 4, 2, 1, 0},
+        new int [5] { 1, 3, 4, 0, 2}
 };
 
 
@@ -942,7 +957,7 @@ namespace PopularMatching
             
             Utility.WriteLine();
             Utility.WriteLine("Brute force popular matchings:");
-            Utility.WriteLine(Utility.CollectionToString(ValidMatchings(men, women).PopularMatchings(men, women).Select(m => m.DefaultString()), "", "\n", ""));
+            Utility.WriteLine(Utility.CollectionToString(ValidMatchings(men, women).ToArray().PopularMatchings(men, women).Select(m => m.DefaultString()), "", "\n", ""));
 
 
             Utility.WriteLine();

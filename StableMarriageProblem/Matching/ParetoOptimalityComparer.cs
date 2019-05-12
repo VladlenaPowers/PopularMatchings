@@ -11,10 +11,27 @@ namespace PopularMatching
         int[][] men;
         int[][] women;
 
+        int[][] menRank;
+
         public ParetoOptimalityComparer(int[][] men, int[][] women)
         {
             this.men = men;
             this.women = women;
+
+            int menLength = men.Length;
+            int womenLength = women.Length;
+
+            menRank = new int[menLength][];
+
+            for (int i = 0; i < menLength; i++)
+            {
+                menRank[i] = new int[womenLength];
+                for (int j = 0; j < womenLength; j++)
+                {
+                    int index = Array.IndexOf(men[i], j);
+                    menRank[i][j] = (index < 0) ? int.MaxValue : index;
+                }
+            }
         }
 
         public int Compare(int[] x, int[] y)
@@ -35,7 +52,7 @@ namespace PopularMatching
                 {
                     continue;
                 }
-                else if(Array.IndexOf(men[i], x[i]) > Array.IndexOf(men[i], y[i]))
+                else if(menRank[i][x[i]] > menRank[i][y[i]])
                 {
                     continue;
                 }
