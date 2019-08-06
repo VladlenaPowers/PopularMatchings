@@ -48,11 +48,7 @@ namespace PopularMatching
                     }
                 }
 
-                yield return new PreferenceLists()
-                {
-                    men = men,
-                    women = women.Select(a => a.ToArray()).ToArray()
-                };
+                yield return new PreferenceLists(men, women.Select(a => a.ToArray()).ToArray());
             }
         }
 
@@ -147,7 +143,7 @@ namespace PopularMatching
         }
 
         //this algorithm generates all possible matchings
-        private static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
+        public static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
         {
             var menSequence = Enumerable.Range(0, men.Length);
 
@@ -232,7 +228,7 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
-        private static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
+        public static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
             ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
 
@@ -267,7 +263,7 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
-        private static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
+        public static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
             MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
 
@@ -300,7 +296,7 @@ namespace PopularMatching
             //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
             //});
         }
-
+        
         //private static IEnumerable<int[]> StableMatchings(this IEnumerable<int[]> popularMatchings)
         //{
         //    int[] min = popularMatchings.Aggregate((a, b) => (Matching.stableComparer.Compare(a, b) > 0) ? a : b);
@@ -309,50 +305,359 @@ namespace PopularMatching
         //        return Matching.stableComparer.Compare(min, popularMatching) == 0;
         //    });
         //}
-
-        static void DoTheThing()
+        
+        public static int MaxIntersections(this IEnumerable<int[]> matchings, int[] operand)
         {
+            return matchings.Select(i => MatchingEqualityComparerByEdges.MatchingEdges(operand, i)).Max();
+        }
+        
+        private static void DoTheThingCleanest()
+        {
+            const int n = 5;
+            var randomPrefLists = RandomPreferenceLists(n, 53);
 
-            foreach (var prefLists in RandomPreferenceLists(6, 8768))
+            var passedPrefLists = randomPrefLists
+                .Select(pl => new PreferenceLists(pl[0], pl[1]))
+                .Where(pl => pl.StableMatchings.Count() > 1)
+                //.Where(pl => pl.ParetoOptimalMatchings.Count() == 2)
+                //.Where(pl => pl.ParetoOptimalMatchings.Contains(pl.StableMatchings[0], MatchingEqualityComparer.INSTANCE))
+                //.Where(pl => MaxIntersections(pl.ParetoOptimalMatchings, pl.GaleShapelyMatching) == 3)
+                .Where(pl =>
+                {
+                    var stableMatchingsWithoutGS = pl.StableMatchings
+                        .Where(m => !MatchingEqualityComparer.INSTANCE.Equals(pl.GaleShapelyMatching, m))
+                        .ToArray();
+
+                    var stableMaxIntersections = stableMatchingsWithoutGS
+                        .Select(k => pl.ParetoOptimalMatchings.MaxIntersections(k))
+                        .ToArray();
+
+                    int maxValue = stableMaxIntersections.Max();
+                    int gsMaxValue = pl.ParetoOptimalMatchings.MaxIntersections(pl.GaleShapelyMatching);
+
+                    return gsMaxValue == maxValue - 2;
+                })
+                .Select(x => x);
+
+            foreach (var prefLists in passedPrefLists)
+            {
+                Utility.WriteLine("----------------------------- Pref list found -------------------------------");
+
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(prefLists.men.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [" + n + "][] {\n", ",\n", "\n};"));
+
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(prefLists.women.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [" + n + "][] {\n", ",\n", "\n};"));
+                Console.Read();
+            }
+        }
+
+        private static void DoTheThingCleaner()
+        {
+            const int n = 4;
+            foreach (var prefLists in RandomPreferenceLists(n, 35))
             {
                 var m = prefLists[0];
                 var w = prefLists[1];
+                var pl = new PreferenceLists(m, w);
 
-                var popularMatchings = ValidMatchings(m, w).PopularMatchings(m, w).ToArray();
+                //if (!m.All(pl => pl.Any()) || !w.All(pl => pl.Any()))
+                //    continue;
 
-                if (popularMatchings.Length > 1)
+                //var dominantCandidates = pl.PopularMatchings.Where((k, i) => unmatchedCounts[i] == min).ToArray();
+
+                //List<int[]> dominant = new List<int[]>();
+                //List<int[]> maxSizeNonDominant = new List<int[]>();
+                //var popularityComparer = new MatchingPopularityComparer(m, w);
+
+                //foreach (var candidate in dominantCandidates)
+                //{
+                //    var unmatchedMen = candidate.Where(x => x == -1).Count();
+
+                //    var isMaxSizeNonDominant = ValidMatchings(m, w).Any(validMatching => {
+
+                //        var result = popularityComparer.Compare(candidate, validMatching);
+
+                //        if (result == 0)
+                //        {
+                //            var otherUnmatched = validMatching.Where(x => x == -1).Count();
+
+                //            if (unmatchedMen > otherUnmatched)
+                //            {
+                //                maxSizeNonDominant.Add(candidate);
+                //                return true;
+                //            }
+                //        }
+
+                //        return false;
+                //    });
+
+                //    if (!isMaxSizeNonDominant)
+                //    {
+                //        dominant.Add(candidate);
+                //    }
+                //}
+
+                // if (pl.MinSizeMatchings.Length < 2)
+                //    continue;
+
+                //if (middleMatchings.Length < 1)
+                //    continue;
+
+                //if (dominant.Count != 1)
+                //    continue;
+
+                var stableMaxIntersections = pl.StableMatchings
+                    .Select(k => pl.ParetoOptimalMatchings.MaxIntersections(k))
+                    .ToArray();
+
+                int galeShapleyMaxIntersections = pl.ParetoOptimalMatchings
+                    .MaxIntersections(pl.GaleShapelyMatching);
+
+                if (pl.StableMatchings.Length != 1)
                     continue;
 
-                var paretoOptimalMatchings = ValidMatchings(m, w).ParetoOptimalMatchings(m, w);
+                //if (pl.ParetoOptimalMatchings.Length != 1)
+                //    continue;
 
+                //var cond0 = !pl.ParetoOptimalMatchings.Contains(pl.GaleShapelyMatching, mCmp);
 
-                //bool anyTheSame = false;
-                //foreach (var popMatch in popularMatchings)
+                //if (!cond0)
+                //    continue;
+
+                //var cond1 = pl.StableMatchings.Any(k => !mCmp.Equals(pl.GaleShapelyMatching, k) && pl.ParetoOptimalMatchings.Contains(k, mCmp));
+
+                //if (!cond1)
+                //    continue;
+
+                //int galeShapelyIndex = -1;
+                //for (int i = 0; i < pl.StableMatchings.Length; i++)
                 //{
-                //    foreach (var paretoMatch in paretoOptimalMatchings)
+                //    if (MatchingEqualityComparer.INSTANCE.Equals(pl.GaleShapelyMatching, pl.StableMatchings[i]))
                 //    {
-                //        if (MatchingEqualityComparerByEdges.INSTANCE.Equals(popMatch, paretoMatch))
+                //        galeShapelyIndex = i;
+                //        break;
+                //    }
+                //}
+
+                //if (galeShapelyIndex < 0)
+                //    throw new Exception("Gale shapely not found in stable set");
+
+                int maxDiff = 0;
+                int maxValue = stableMaxIntersections.Max();
+
+                //if ((galeshapleymaxintersections > 3))
+                //    continue;
+
+                if ((galeShapleyMaxIntersections != 3))
+                    continue;
+
+                if ((maxValue + 1 != galeShapleyMaxIntersections))
+                    continue;
+
+                //var maxMatching = pl.StableMatchings[Array.IndexOf(stableMaxIntersections, maxValue)];
+
+                //if (!pl.ParetoOptimalMatchings.Contains(maxMatching, MatchingEqualityComparer.INSTANCE))
+                //    continue;
+
+                //if (pl.ParetoOptimalMatchings.Contains(DiscreteKavitha.GaleShapley(m, w), MatchingEqualityComparer.INSTANCE))
+                //    continue;
+
+                //if (pl.ParetoOptimalMatchings.Length > 1)
+                //    continue;
+
+                //bool skip = false;
+                //foreach (var popMatch in pl.PopularMatchings)
+                //{
+                //    foreach (var paretoMatch in pl.ParetoOptimalMatchings)
+                //    {
+                //        if (!MatchingEqualityComparerByEdges.INSTANCE.Equals(popMatch, paretoMatch))
                 //        {
-                //            anyTheSame = true;
+                //            skip = true;
                 //            break;
                 //        }
                 //    }
 
-                //    if (anyTheSame)
+                //    if (skip)
                 //        break;
                 //}
 
-                var intersection = popularMatchings.Intersect(paretoOptimalMatchings, MatchingEqualityComparer.INSTANCE);
+                Utility.WriteLine("----------------------------- Pref list found -------------------------------");
 
-                if(!intersection.Any())
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(m.Select((oPl, i) => "\tnew int [" + (oPl.Count()) + "] " + oPl.DefaultString()), "int[][] men = new int [" + n + "][] {\n", ",\n", "\n};"));
+
+                Utility.WriteLine();
+                Utility.WriteLine(Utility.CollectionToString(w.Select((oPl, i) => "\tnew int [" + (oPl.Count()) + "] " + oPl.DefaultString()), "int[][] women = new int [" + n + "][] {\n", ",\n", "\n};"));
+                Console.Read();
+            }
+        }
+
+        private static void DoTheThing()
+        {
+            const int n = 4;
+            foreach (var prefLists in RandomPreferenceLists(n, 35))
+            {
+                var m = prefLists[0];
+                var w = prefLists[1];
+
+
+                var mCmp = new MatchingEqualityComparer();
+
+                //if (!m.All(pl => pl.Any()) || !w.All(pl => pl.Any()))
+                //    continue;
+
+                var popularMatchings = ValidMatchings(m, w).PopularMatchings(m, w);//.ToArray();
+
+                var unmatchedCounts = popularMatchings.Select(matching => matching.Where(k => k == -1).Count()).ToArray();
+                int max = unmatchedCounts.Max();
+                int min = unmatchedCounts.Min();
+                var middleMatchings = popularMatchings.Where((k, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray();
+                var minSize = popularMatchings.Where((k, i) => unmatchedCounts[i] == max).ToArray();
+
+                var dominantCandidates = popularMatchings.Where((k, i) => unmatchedCounts[i] == min).ToArray();
+
+                //List<int[]> dominant = new List<int[]>();
+                //List<int[]> maxSizeNonDominant = new List<int[]>();
+                //var popularityComparer = new MatchingPopularityComparer(m, w);
+
+                //foreach (var candidate in dominantCandidates)
+                //{
+                //    var unmatchedMen = candidate.Where(x => x == -1).Count();
+
+                //    var isMaxSizeNonDominant = ValidMatchings(m, w).Any(validMatching => {
+
+                //        var result = popularityComparer.Compare(candidate, validMatching);
+
+                //        if (result == 0)
+                //        {
+                //            var otherUnmatched = validMatching.Where(x => x == -1).Count();
+
+                //            if (unmatchedMen > otherUnmatched)
+                //            {
+                //                maxSizeNonDominant.Add(candidate);
+                //                return true;
+                //            }
+                //        }
+
+                //        return false;
+                //    });
+
+                //    if (!isMaxSizeNonDominant)
+                //    {
+                //        dominant.Add(candidate);
+                //    }
+                //}
+
+               // if (minSize.Length < 2)
+                //    continue;
+
+                //if (middleMatchings.Length < 1)
+                //    continue;
+
+                //if (dominant.Count != 1)
+                //    continue;
+
+
+
+
+                var paretoOptimalMatchings = ValidMatchings(m, w).ParetoOptimalMatchings(m, w).ToArray();
+
+                var galeShapleyMatching = DiscreteKavitha.GaleShapley(m, w);
+
+                var edgeFinder = Program.PlusPlusEdgeFinder(new PreferenceLists(m, w));
+                var stable = minSize
+                    .Where(k => edgeFinder(k).Count() == 0)
+                    .Where(k => !MatchingEqualityComparer.INSTANCE.Equals(k, galeShapleyMatching))
+                    .ToArray();
+                var stableMaxIntersections = stable.Select(k =>
+                {
+                    return paretoOptimalMatchings.Select(i => MatchingEqualityComparerByEdges.MatchingEdges(k, i)).Max();
+                }).ToArray();
+
+                int galeShapleyMaxIntersections = paretoOptimalMatchings.Select(i => MatchingEqualityComparerByEdges.MatchingEdges(galeShapleyMatching, i)).Max();
+
+                if (stable.Length != 1)
+                    continue;
+
+                //if (paretoOptimalMatchings.Length != 1)
+                //    continue;
+
+                //var cond0 = !paretoOptimalMatchings.Contains(galeShapleyMatching, mCmp);
+
+                //if (!cond0)
+                //    continue;
+
+                //var cond1 = stable.Any(k => !mCmp.Equals(galeShapleyMatching, k) && paretoOptimalMatchings.Contains(k, mCmp));
+
+                //if (!cond1)
+                //    continue;
+
+                //int galeShapelyIndex = -1;
+                //for (int i = 0; i < stable.Length; i++)
+                //{
+                //    if (MatchingEqualityComparer.INSTANCE.Equals(galeShapleyMatching, stable[i]))
+                //    {
+                //        galeShapelyIndex = i;
+                //        break;
+                //    }
+                //}
+
+                //if (galeShapelyIndex < 0)
+                //    throw new Exception("Gale shapely not found in stable set");
+
+                int maxDiff = 0;
+                int maxValue = stableMaxIntersections.Max();
+
+                //if ((galeshapleymaxintersections > 3))
+                //    continue;
+
+                if ((galeShapleyMaxIntersections != 3))
+                    continue;
+
+                if ((maxValue + 1 != galeShapleyMaxIntersections))
+                    continue;
+
+                //var maxMatching = stable[Array.IndexOf(stableMaxIntersections, maxValue)];
+
+                //if (!paretoOptimalMatchings.Contains(maxMatching, MatchingEqualityComparer.INSTANCE))
+                //    continue;
+
+
+
+
+
+                //if (paretoOptimalMatchings.Contains(DiscreteKavitha.GaleShapley(m, w), MatchingEqualityComparer.INSTANCE))
+                //    continue;
+
+                //if (paretoOptimalMatchings.Length > 1)
+                //    continue;
+
+                //bool skip = false;
+                //foreach (var popMatch in popularMatchings)
+                //{
+                //    foreach (var paretoMatch in paretoOptimalMatchings)
+                //    {
+                //        if (!MatchingEqualityComparerByEdges.INSTANCE.Equals(popMatch, paretoMatch))
+                //        {
+                //            skip = true;
+                //            break;
+                //        }
+                //    }
+
+                //    if (skip)
+                //        break;
+                //}
+
+                if (true)
                 {
                     Utility.WriteLine("----------------------------- Pref list found -------------------------------");
 
                     Utility.WriteLine();
-                    Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [4][] {\n", ",\n", "\n};"));
+                    Utility.WriteLine(Utility.CollectionToString(m.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] men = new int [" + n + "][] {\n", ",\n", "\n};"));
 
                     Utility.WriteLine();
-                    Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" +( pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [4][] {\n", ",\n", "\n};"));
+                    Utility.WriteLine(Utility.CollectionToString(w.Select((pl, i) => "\tnew int [" +( pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [" + n + "][] {\n", ",\n", "\n};"));
                     Console.Read();
                 }
             }
@@ -551,7 +856,7 @@ namespace PopularMatching
             return false;
         }
 
-        static Func<int[], int[][]> PlusPlusEdgeFinder(PreferenceLists preferenceLists)
+        public static Func<int[], int[][]> PlusPlusEdgeFinder(PreferenceLists preferenceLists)
         {
             return (int[] matching) =>
             {
@@ -608,14 +913,13 @@ namespace PopularMatching
 
         static Matchings CreateMatchings(PreferenceLists preferenceLists)
         {
-            var popularMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).PopularMatchings(preferenceLists.men, preferenceLists.women).ToArray();
-            var paretoOptimalMatchings = ValidMatchings(preferenceLists.men, preferenceLists.women).ParetoOptimalMatchings(preferenceLists.men, preferenceLists.women).ToArray();
-
-            var unmatchedCounts = popularMatchings.Select(matching => matching.Where(m => m == -1).Count()).ToArray();
+            var unmatchedCounts = preferenceLists.PopularMatchings
+                .Select(matching => matching.Where(m => m == -1).Count()).ToArray();
             int max = unmatchedCounts.Max();
             int min = unmatchedCounts.Min();
 
-            var dominantCandidates = popularMatchings.Where((m, i) => unmatchedCounts[i] == min).ToArray();
+            var dominantCandidates = preferenceLists.PopularMatchings
+                .Where((m, i) => unmatchedCounts[i] == min).ToArray();
 
             List<int[]> dominant = new List<int[]>();
             List<int[]> maxSizeNonDominant = new List<int[]>();
@@ -656,10 +960,10 @@ namespace PopularMatching
                 max = max,
                 dominant = dominant.ToArray(),
                 dominantPlusPlusEdges = dominant.Select(PlusPlusEdgeFinder(preferenceLists)).ToArray(),
-                middle = popularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
-                minSize = popularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray(),
+                middle = preferenceLists.PopularMatchings.Where((m, i) => (unmatchedCounts[i] > min && unmatchedCounts[i] < max)).ToArray(),
+                minSize = preferenceLists.PopularMatchings.Where((m, i) => unmatchedCounts[i] == max).ToArray(),
                 maxSizeNonDominant = maxSizeNonDominant.ToArray(),
-                paretoOptimalMatchings = paretoOptimalMatchings
+                paretoOptimalMatchings = preferenceLists.ParetoOptimalMatchings
             };
         }
 
@@ -754,64 +1058,126 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            DoTheThing();
+           DoTheThingCleanest();  return;
 
-            return;
             //6FindPrefLists();
-
             //Testing();
             //return;
 
-            // int[][] men = new int[12][]
-            //{    new int[3] { 0, 4, 5 },
-            //     new int[2] { 0, 1 },
-            //     new int[3] { 3, 1, 2 },
-            //     new int[3] { 3, 6, 7 },
-            //     new int[2] { 4, 5 },
-            //     new int[2] { 6, 7 },
-            //     new int[3] { 5, 10, 11 },
-            //     new int[3] { 7, 10, 11 },
-            //     new int[2] { 8, 1},
-            //     new int[3] { 1, 10, 8 },
-            //     new int[2] { 9, 2 },
-            //     new int[3] {2, 11, 9 }
+            int[][] men = new int[8][] {
+        new int [4] { 2, 3, 0, 1},
+        new int [5] { 0, 5, 1, 3, 2},
+        new int [5] { 0, 2, 7, 3, 1},
+        new int [4] { 3, 2, 1, 0},
+        new int [4] { 6, 7, 4, 5},
+        new int [5] { 4, 1, 5, 7, 6},
+        new int [5] { 4, 6, 3, 7, 5},
+        new int [4] { 7, 6, 5, 4}
+};
+
+            int[][] women = new int[8][] {
+        new int [4] { 0, 1, 2, 3},
+        new int [5] { 3, 1, 0, 2, 5},
+        new int [4] { 1, 3, 0, 2},
+        new int [5] { 2, 1, 3, 0, 6},
+        new int [4] { 4, 5, 6, 7},
+        new int [5] { 7, 5, 4, 6, 1},
+        new int [4] { 5, 7, 4, 6},
+        new int [5] { 6, 5, 7, 4, 2}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //            int[][] men = new int[9][] {
+            //        new int [4] { 2, 3, 6, 0},
+            //        new int [4] { 0, 5, 8, 2},
+            //        new int [2] { 2, 0},
+            //        new int [4] { 5, 6, 0, 3},
+            //        new int [4] { 3, 8, 2, 5},
+            //        new int [2] { 5, 3},
+            //        new int [4] { 8, 0, 3, 6},
+            //        new int [4] { 6, 2, 5, 8},
+            //        new int [2] { 8, 6}
             //};
 
-            // int[][] women = new int[12][]
-            // {   new int[2] { 1, 0 },
-            //     new int[4] { 1, 2, 8, 9 },
-            //     new int[3] { 2, 10, 11 },
-            //     new int[2] { 2, 3 },
-            //     new int[2] { 4, 0 },
-            //     new int[3] { 6, 4, 0 },
-            //     new int[2] { 5, 3 },
-            //     new int[3] { 7, 5, 3 },
-            //     new int[2] { 8, 9 },
-            //     new int[2] { 10, 11 },
-            //     new int[3] { 6, 7, 9 },
-            //     new int[3] { 6, 7, 11 }
-            // };
+            //            int[][] women = new int[9][] {
+            //        new int [5] { 0, 1, 2, 3, 6},
+            //        new int [0] {},
+            //        new int [5] { 1, 2, 0, 4, 7},
+            //        new int [5] { 3, 4, 5, 6, 0},
+            //        new int [0] {},
+            //        new int [5] { 4, 5, 3, 7, 1},
+            //        new int [5] { 6, 7, 8, 0, 3},
+            //        new int [0] {},
+            //        new int [5] { 7, 8, 6, 1, 4}
+            //};
+            //        int[][] men = new int[4][] {
+            //        new int [3] { 2, 3, 1},
+            //        new int [2] { 0, 3},
+            //        new int [4] { 0, 1, 3, 2},
+            //        new int [4] { 1, 2, 3, 0}
+            //};
 
-            int[][] men = new int[4][] {
-        new int [2] { 3, 0},
-        new int [3] { 0, 2, 3},
-        new int [3] { 2, 0, 3},
-        new int [2] { 0, 2}
-};
+            //        int[][] women = new int[4][] {
+            //        new int [3] { 3, 1, 2},
+            //        new int [3] { 3, 2, 0},
+            //        new int [3] { 3, 2, 0},
+            //        new int [4] { 1, 2, 3, 0}
 
-            int[][] women = new int[4][] {
-        new int [4] { 2, 3, 0, 1},
-        new int [0] {},
-        new int [3] { 3, 1, 2},
-        new int [3] { 1, 0, 2}
-};
+            //        int[][] men = new int[4][] {
+            //        new int [4] { 0, 3, 2, 1},
+            //        new int [4] { 2, 3, 0, 1},
+            //        new int [4] { 3, 2, 1, 0},
+            //        new int [4] { 2, 1, 0, 3}
+            //};
+
+            //        int[][] women = new int[4][] {
+            //        new int [4] { 1, 0, 2, 3},
+            //        new int [4] { 0, 3, 1, 2},
+            //        new int [4] { 2, 3, 0, 1},
+            //        new int [4] { 3, 0, 2, 1}
+            //};
 
 
-            PreferenceLists pl2 = new PreferenceLists()
-            {
-                men = men,
-                women = women
-            };
+
+
+
+
+
+
+
+
+
+
+
+
+            PreferenceLists pl2 = new PreferenceLists(men, women);
 
             Matchings matchings = CreateMatchings(pl2);
 

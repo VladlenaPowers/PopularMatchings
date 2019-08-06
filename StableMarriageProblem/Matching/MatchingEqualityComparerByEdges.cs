@@ -9,20 +9,28 @@ namespace PopularMatching
     //compares two matchings to see if they are the same.
     public class MatchingEqualityComparerByEdges : IEqualityComparer<int[]>
     {
-        public bool Equals(int[] x, int[] y)
+        public static int MatchingEdges(int[] x, int[] y)
         {
             if (x.Length != y.Length)
             {
                 throw new Exception("Matchings must be the same length");
             }
+
+            int count = 0;
             for (int i = 0; i < x.Length; i++)
             {
-                if (x[i] == y[i])
+                if (x[i] == y[i] && x[i] >= 0)
                 {
-                    return true;
+                    count++;
                 }
             }
-            return false;
+
+            return count;
+        }
+
+        public bool Equals(int[] x, int[] y)
+        {
+            return MatchingEqualityComparerByEdges.MatchingEdges(x, y) <= 1;
         }
         public int GetHashCode(int[] obj)
         {
