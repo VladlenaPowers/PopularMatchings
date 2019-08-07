@@ -313,15 +313,42 @@ namespace PopularMatching
         
         private static void DoTheThingCleanest()
         {
-            const int n = 5;
-            var randomPrefLists = RandomPreferenceLists(n, 53);
+            const int n = 3;
+            var randomPrefLists = RandomPreferenceLists(n, 1);
+
+            var sw = new Stopwatch();
+            int count = 0;
+            sw.Start();
 
             var passedPrefLists = randomPrefLists
-                .Select(pl => new PreferenceLists(pl[0], pl[1]))
+                .Select(pl => {
+                    if(++count == 10000)
+                    {
+                        Console.Write("\rProcessing " + (count / (sw.ElapsedMilliseconds * 0.001)) + "/s");
+                        sw.Restart();
+                        count = 0;
+                    }
+                    return new PreferenceLists(pl[0], pl[1]);
+                })
+                //.Where(pl => pl.men.Where(l => l.Length <= 1).Any() || pl.women.Where(l => l.Length <= 1).Any())
                 .Where(pl => pl.StableMatchings.Count() > 1)
                 //.Where(pl => pl.ParetoOptimalMatchings.Count() == 2)
                 //.Where(pl => pl.ParetoOptimalMatchings.Contains(pl.StableMatchings[0], MatchingEqualityComparer.INSTANCE))
                 //.Where(pl => MaxIntersections(pl.ParetoOptimalMatchings, pl.GaleShapelyMatching) == 3)
+                //.Where(pl =>
+                //{
+                //    var gsMaxIntersections = pl.ParetoOptimalMatchings
+                //        .Select(m => MatchingEqualityComparerByEdges.MatchingEdges(pl.GaleShapelyMatching, m))
+                //        .ToArray();
+
+                //    Array.Sort(gsMaxIntersections);
+                //    Array.Reverse(gsMaxIntersections);
+
+                //    if (gsMaxIntersections.Length < 2)
+                //        return true;
+
+                //    return gsMaxIntersections[0] != gsMaxIntersections[1];
+                //})
                 .Where(pl =>
                 {
                     var stableMatchingsWithoutGS = pl.StableMatchings
@@ -335,7 +362,7 @@ namespace PopularMatching
                     int maxValue = stableMaxIntersections.Max();
                     int gsMaxValue = pl.ParetoOptimalMatchings.MaxIntersections(pl.GaleShapelyMatching);
 
-                    return gsMaxValue == maxValue - 2;
+                    return gsMaxValue == maxValue;
                 })
                 .Select(x => x);
 
@@ -348,6 +375,9 @@ namespace PopularMatching
 
                 Utility.WriteLine();
                 Utility.WriteLine(Utility.CollectionToString(prefLists.women.Select((pl, i) => "\tnew int [" + (pl.Count()) + "] " + pl.DefaultString()), "int[][] women = new int [" + n + "][] {\n", ",\n", "\n};"));
+
+                Utility.WriteLine();
+                Utility.WriteLine();
                 Console.Read();
             }
         }
@@ -1058,33 +1088,50 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-           DoTheThingCleanest();  return;
+            //DoTheThingCleanest();  return;
 
             //6FindPrefLists();
             //Testing();
             //return;
 
-            int[][] men = new int[8][] {
-        new int [4] { 2, 3, 0, 1},
-        new int [5] { 0, 5, 1, 3, 2},
-        new int [5] { 0, 2, 7, 3, 1},
-        new int [4] { 3, 2, 1, 0},
-        new int [4] { 6, 7, 4, 5},
-        new int [5] { 4, 1, 5, 7, 6},
-        new int [5] { 4, 6, 3, 7, 5},
-        new int [4] { 7, 6, 5, 4}
+
+        int[][] men = new int[12][] {
+        new int [5] { 6, 3, 2, 0, 1},
+        new int [5] { 8, 5, 0, 2, 1},
+        new int [5] { 7, 4, 2, 1, 0},
+
+        new int [5] { 6, 0, 5, 3, 4},
+        new int [5] { 8, 2, 3, 5, 4},
+        new int [5] { 7, 1, 5, 4, 3},
+
+        new int [5] { 0, 3, 8, 6, 7},
+        new int [5] { 2, 5, 6, 8, 7},
+        new int [5] { 1, 4, 8, 7, 6},
+
+        new int [1] { 1},
+        new int [1] { 1},
+        new int [1] { 1},
 };
 
-            int[][] women = new int[8][] {
-        new int [4] { 0, 1, 2, 3},
-        new int [5] { 3, 1, 0, 2, 5},
-        new int [4] { 1, 3, 0, 2},
-        new int [5] { 2, 1, 3, 0, 6},
-        new int [4] { 4, 5, 6, 7},
-        new int [5] { 7, 5, 4, 6, 1},
-        new int [4] { 5, 7, 4, 6},
-        new int [5] { 6, 5, 7, 4, 2}
+        int[][] women = new int[9][] {
+        new int [5] { 2, 0, 1, 3, 6},
+        new int [6] { 0, 1, 2, 9, 5, 8},
+        new int [5] { 1, 2, 0, 4, 7},
+
+        new int [5] { 5, 3, 4, 0, 6},
+        new int [6] { 3, 4, 5, 10, 2, 8},
+        new int [5] { 4, 5, 3, 1, 7},
+
+        new int [5] { 8, 6, 7, 0, 3},
+        new int [6] { 6, 7, 8, 11, 2, 5},
+        new int [5] { 7, 8, 6, 1, 4}
 };
+
+
+
+
+
+
 
 
 
