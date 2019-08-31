@@ -146,6 +146,7 @@ namespace PopularMatching
         public static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
         {
             var menSequence = Enumerable.Range(0, men.Length);
+            var womenSequence = Enumerable.Range(0, women.Length);
 
             //represents a three-dimensional jagged array
             //i0 = the number of unmatched men
@@ -156,6 +157,16 @@ namespace PopularMatching
             }).ToArray();
 
             var matchedWomenSets = Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() /*<=*/<= men.Length);
+
+            var commonAttraction = new bool[men.Length][];
+            for (int mI = 0; mI < men.Length; mI++)
+            {
+                commonAttraction[mI] = new bool[women.Length];
+                for (int wI = 0; wI < women.Length; wI++)
+                {
+                    commonAttraction[mI][wI] = women[wI].Contains(mI) && men[mI].Contains(wI);
+                }
+            }
 
             foreach (var matchedWomen in matchedWomenSets)
             {
@@ -194,9 +205,10 @@ namespace PopularMatching
                         int woman = output[l];
                         if (woman >= 0)
                         {
-                            if (!(women[woman].Contains(l) && men[l].Contains(woman)))
+                            if (!commonAttraction[l][woman])
                             {
                                 passes = false;
+                                break;
                             }
                         }
                     }
@@ -230,9 +242,11 @@ namespace PopularMatching
         //returns all of the popular matchings for a given set of matchings
         public static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
-            ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
-
             int[][] matchingsArray = matchings.ToArray();
+            if (matchingsArray.Length > 100000)
+                return matchingsArray.ParetoOptimalMatchingsParallel(men, women);
+
+            ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
 
             List<int[]> output = new List<int[]>();
             int[][] matchingsArr = matchings.ToArray();
@@ -263,11 +277,24 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
+        public static IEnumerable<int[]> ParetoOptimalMatchingsParallel(this int[][] matchingsArray, int[][] men, int[][] women)
+        {
+            ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
+
+            return matchingsArray
+                .AsParallel()
+                .WithMergeOptions(ParallelMergeOptions.FullyBuffered)
+                .Where(m => matchingsArray.All(oM => (m != oM) ? comparer.Compare(m, oM) < 0 : true));
+        }
+
+        //returns all of the popular matchings for a given set of matchings
         public static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
-            MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
-
             int[][] matchingsArray = matchings.ToArray();
+            if (matchingsArray.Length > 100000)
+                return matchingsArray.PopularMatchingsParallel(men, women);
+
+            MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
 
             List<int[]> output = new List<int[]>();
             int[][] matchingsArr = matchings.ToArray();
@@ -296,7 +323,18 @@ namespace PopularMatching
             //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
             //});
         }
-        
+
+        //returns all of the popular matchings for a given set of matchings
+        public static IEnumerable<int[]> PopularMatchingsParallel(this int[][] matchingsArray, int[][] men, int[][] women)
+        {
+            MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
+
+            return matchingsArray
+                .AsParallel()
+                .WithMergeOptions(ParallelMergeOptions.FullyBuffered)
+                .Where(m => matchingsArray.All(oM => (m != oM) ? comparer.Compare(m, oM) < 0 : true));
+        }
+
         //private static IEnumerable<int[]> StableMatchings(this IEnumerable<int[]> popularMatchings)
         //{
         //    int[] min = popularMatchings.Aggregate((a, b) => (Matching.stableComparer.Compare(a, b) > 0) ? a : b);
@@ -305,7 +343,7 @@ namespace PopularMatching
         //        return Matching.stableComparer.Compare(min, popularMatching) == 0;
         //    });
         //}
-        
+
         public static int MaxIntersections(this IEnumerable<int[]> matchings, int[] operand)
         {
             return matchings.Select(i => MatchingEqualityComparerByEdges.MatchingEdges(operand, i)).Max();
