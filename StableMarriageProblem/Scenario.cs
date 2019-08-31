@@ -75,6 +75,32 @@ namespace PopularMatching
                     .ToArray();
             });
         }
+
+        public static KeyValuePair<int[], int[]>[][] GroupIntersectionsByCount(int[][] a, int[][] b)
+        {
+
+            List<List<KeyValuePair<int[], int[]>>> intersectingPairs = new List<List<KeyValuePair<int[], int[]>>>();
+
+            foreach (var aM in a)
+            {
+                foreach (var bM in b)
+                {
+                    int count = MatchingEqualityComparerByEdges.MatchingEdges(aM, bM);
+
+                    while (intersectingPairs.Count <= count)
+                        intersectingPairs.Add(new List<KeyValuePair<int[], int[]>>());
+
+                    intersectingPairs[count].Add(new KeyValuePair<int[], int[]>(aM, bM));
+                }
+            }
+
+            return intersectingPairs.Select(l => l.ToArray()).ToArray();
+
+            //return a.SelectMany(aM => b.Select(bM => new KeyValuePair<int[], int[]>(aM, bM)))
+            //    .GroupBy(kvp => MatchingEqualityComparerByEdges.MatchingEdges(kvp.Key, kvp.Value))
+            //    .Select(g => g.ToArray())
+            //    .ToArray();
+        }
     }
 
     struct Matchings
@@ -157,8 +183,6 @@ namespace PopularMatching
             sb.AppendLine(Utility.NewLineIndented(matchings.paretoOptimalMatchings.Select(Utility.DefaultString)));
             sb.AppendLine();
 
-            List<List<int[][]>> intersectingPairs = new List<List<int[][]>>();
-
             List<int[]> firstMatchings = new List<int[]>();
             //firstMatchings.AddRange(matchings.dominant);
             //firstMatchings.AddRange(matchings.middle);
@@ -167,29 +191,17 @@ namespace PopularMatching
             firstMatchings.AddRange(stable);
 
             sb.AppendLine("intersections(dominant):");
-            foreach (var popMatch in firstMatchings)
-            {
-                foreach (var paretoMatch in matchings.paretoOptimalMatchings)
-                {
-                    int count = MatchingEqualityComparerByEdges.MatchingEdges(popMatch, paretoMatch);
+            
 
-                    while (intersectingPairs.Count <= count)
-                        intersectingPairs.Add(new List<int[][]>());
-
-                    intersectingPairs[count].Add(new int[2][] {
-                        popMatch,
-                        paretoMatch
-                    });
-                }
-            }
+            var intersectionGroups = PreferenceLists.GroupIntersectionsByCount(firstMatchings.ToArray(), matchings.paretoOptimalMatchings);
 
             sb.AppendLine("intersections:");
-            for (int i = 0; i < intersectingPairs.Count; i++)
+            for (int i = 0; i < intersectionGroups.Length; i++)
             {
                 sb.AppendLine("count = " + i);
-                foreach(var pair in intersectingPairs[i])
+                foreach(var pair in intersectionGroups[i])
                 {
-                    sb.AppendLine("\t" + Utility.DefaultString(pair[0]) + ", " + Utility.DefaultString(pair[1]));
+                    sb.AppendLine("\t" + Utility.DefaultString(pair.Key) + ", " + Utility.DefaultString(pair.Value));
                 }
             }
 

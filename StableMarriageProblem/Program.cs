@@ -313,7 +313,7 @@ namespace PopularMatching
         
         private static void DoTheThingCleanest()
         {
-            const int n = 2;
+            const int n = 3;
             var randomPrefLists = RandomPreferenceLists(n, 1);
 
             var sw = new Stopwatch();
@@ -331,7 +331,21 @@ namespace PopularMatching
                     return new PreferenceLists(pl[0], pl[1]);
                 })
                 //.Where(pl => pl.men.Where(l => l.Length <= 1).Any() || pl.women.Where(l => l.Length <= 1).Any())
-                .Where(pl => pl.StableMatchings.Count() > 1)
+                .Where(pl => pl.StableMatchings.Count() == 2)
+                .Where(pl => {
+                    return MaxIntersections(pl.ParetoOptimalMatchings, pl.StableMatchings[0]) == MaxIntersections(pl.ParetoOptimalMatchings, pl.StableMatchings[1]);
+                })
+                .Where(pl =>
+                {
+                    var intersectionGroups = PreferenceLists.GroupIntersectionsByCount(pl.StableMatchings, pl.ParetoOptimalMatchings);
+                    if (intersectionGroups.Length == 0)
+                        return false;
+
+                    var lastGroup = intersectionGroups[intersectionGroups.Length - 1];
+
+                    var groupsByStable = lastGroup.GroupBy(kvp => kvp.Key, MatchingEqualityComparer.INSTANCE);
+                    return groupsByStable.All(g => g.Count() == 1);
+                })
                 //.Where(pl => pl.ParetoOptimalMatchings.Count() == 2)
                 //.Where(pl => pl.ParetoOptimalMatchings.Contains(pl.StableMatchings[0], MatchingEqualityComparer.INSTANCE))
                 //.Where(pl => MaxIntersections(pl.ParetoOptimalMatchings, pl.GaleShapelyMatching) == 3)
@@ -1088,44 +1102,54 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            //DoTheThingCleanest();  return;
+            DoTheThingCleanest();  return;
 
             //6FindPrefLists();
             //Testing();
             //return;
 
 
-            int[][] men = new int[12][] {
-            new int [] { 7, 0},
-            new int [] { 2, 0, 1},
-            new int [] { 0, 2},
-            new int [] { 4, 1, 3},
-            new int [] { 1, 4},
-            new int [] { 6, 3, 5},
-            new int [] { 3, 6},
-            new int [] { 5, 8, 7, 9, 10, 11},
-            new int [] { 7, 8},
-            new int [] { 2},
-            new int [] { 4},
-            new int [] { 6},
-            };
+            int[][] men = new int[3][] {
+        new int [3] { 1, 0, 2},
+        new int [3] { 2, 1, 0},
+        new int [3] { 1, 2, 0}
+};
 
-            int[][] women = new int[12][] {
-            new int [] { 0, 1, 2},
-            new int [] { 1, 3, 4},
-            new int [] { 2, 9, 1},
-            new int [] { 3, 5, 6},
-            new int [] { 4, 10, 3},
-            new int [] { 5, 7},
-            new int [] { 6, 11, 5},
-            new int [] { 7, 0, 8},
-            new int [] { 8, 7},
-            new int [] { 7},
-            new int [] { 7},
-            new int [] { 7},
-            };
+            int[][] women = new int[3][] {
+        new int [3] { 1, 2, 0},
+        new int [3] { 1, 0, 2},
+        new int [3] { 0, 2, 1}
+};
 
+            //int[][] men = new int[12][] {
+            //new int [] { 7, 0},
+            //new int [] { 2, 0, 1},
+            //new int [] { 0, 2},
+            //new int [] { 4, 1, 3},
+            //new int [] { 1, 4},
+            //new int [] { 6, 3, 5},
+            //new int [] { 3, 6},
+            //new int [] { 5, 8, 7, 9, 10, 11},
+            //new int [] { 7, 8},
+            //new int [] { 2},
+            //new int [] { 4},
+            //new int [] { 6},
+            //};
 
+            //int[][] women = new int[12][] {
+            //new int [] { 0, 1, 2},
+            //new int [] { 1, 3, 4},
+            //new int [] { 2, 9, 1},
+            //new int [] { 3, 5, 6},
+            //new int [] { 4, 10, 3},
+            //new int [] { 5, 7},
+            //new int [] { 6, 11, 5},
+            //new int [] { 7, 0, 8},
+            //new int [] { 8, 7},
+            //new int [] { 7},
+            //new int [] { 7},
+            //new int [] { 7},
+            //};
 
 
 
