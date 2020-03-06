@@ -146,7 +146,6 @@ namespace PopularMatching
         public static IEnumerable<int[]> ValidMatchings(int[][] men, int[][] women)
         {
             var menSequence = Enumerable.Range(0, men.Length);
-            var womenSequence = Enumerable.Range(0, women.Length);
 
             //represents a three-dimensional jagged array
             //i0 = the number of unmatched men
@@ -157,16 +156,6 @@ namespace PopularMatching
             }).ToArray();
 
             var matchedWomenSets = Enumerable.Range(0, women.Length).OrderedSubset().Where(m => m.Count() /*<=*/<= men.Length);
-
-            var commonAttraction = new bool[men.Length][];
-            for (int mI = 0; mI < men.Length; mI++)
-            {
-                commonAttraction[mI] = new bool[women.Length];
-                for (int wI = 0; wI < women.Length; wI++)
-                {
-                    commonAttraction[mI][wI] = women[wI].Contains(mI) && men[mI].Contains(wI);
-                }
-            }
 
             foreach (var matchedWomen in matchedWomenSets)
             {
@@ -205,10 +194,9 @@ namespace PopularMatching
                         int woman = output[l];
                         if (woman >= 0)
                         {
-                            if (!commonAttraction[l][woman])
+                            if (!(women[woman].Contains(l) && men[l].Contains(woman)))
                             {
                                 passes = false;
-                                break;
                             }
                         }
                     }
@@ -242,11 +230,9 @@ namespace PopularMatching
         //returns all of the popular matchings for a given set of matchings
         public static IEnumerable<int[]> ParetoOptimalMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
-            int[][] matchingsArray = matchings.ToArray();
-            if (matchingsArray.Length > 100000)
-                return matchingsArray.ParetoOptimalMatchingsParallel(men, women);
-
             ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
+
+            int[][] matchingsArray = matchings.ToArray();
 
             List<int[]> output = new List<int[]>();
             int[][] matchingsArr = matchings.ToArray();
@@ -277,24 +263,11 @@ namespace PopularMatching
         }
 
         //returns all of the popular matchings for a given set of matchings
-        public static IEnumerable<int[]> ParetoOptimalMatchingsParallel(this int[][] matchingsArray, int[][] men, int[][] women)
-        {
-            ParetoOptimalityComparer comparer = new ParetoOptimalityComparer(men, women);
-
-            return matchingsArray
-                .AsParallel()
-                .WithMergeOptions(ParallelMergeOptions.FullyBuffered)
-                .Where(m => matchingsArray.All(oM => (m != oM) ? comparer.Compare(m, oM) < 0 : true));
-        }
-
-        //returns all of the popular matchings for a given set of matchings
         public static IEnumerable<int[]> PopularMatchings(this IEnumerable<int[]> matchings, int[][] men, int[][] women)
         {
-            int[][] matchingsArray = matchings.ToArray();
-            if (matchingsArray.Length > 100000)
-                return matchingsArray.PopularMatchingsParallel(men, women);
-
             MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
+
+            int[][] matchingsArray = matchings.ToArray();
 
             List<int[]> output = new List<int[]>();
             int[][] matchingsArr = matchings.ToArray();
@@ -323,18 +296,7 @@ namespace PopularMatching
             //    return matchingsArray.All(curr => comparer.Compare(matching, curr) >= 0);
             //});
         }
-
-        //returns all of the popular matchings for a given set of matchings
-        public static IEnumerable<int[]> PopularMatchingsParallel(this int[][] matchingsArray, int[][] men, int[][] women)
-        {
-            MatchingPopularityComparer comparer = new MatchingPopularityComparer(men, women);
-
-            return matchingsArray
-                .AsParallel()
-                .WithMergeOptions(ParallelMergeOptions.FullyBuffered)
-                .Where(m => matchingsArray.All(oM => (m != oM) ? comparer.Compare(m, oM) < 0 : true));
-        }
-
+        
         //private static IEnumerable<int[]> StableMatchings(this IEnumerable<int[]> popularMatchings)
         //{
         //    int[] min = popularMatchings.Aggregate((a, b) => (Matching.stableComparer.Compare(a, b) > 0) ? a : b);
@@ -343,7 +305,7 @@ namespace PopularMatching
         //        return Matching.stableComparer.Compare(min, popularMatching) == 0;
         //    });
         //}
-
+        
         public static int MaxIntersections(this IEnumerable<int[]> matchings, int[] operand)
         {
             return matchings.Select(i => MatchingEqualityComparerByEdges.MatchingEdges(operand, i)).Max();
@@ -1140,24 +1102,73 @@ namespace PopularMatching
 
         static void Main(string[] args)
         {
-            DoTheThingCleanest();  return;
+            //DoTheThingCleanest();  return;
 
             //6FindPrefLists();
             //Testing();
             //return;
 
 
-            int[][] men = new int[3][] {
-        new int [3] { 1, 0, 2},
-        new int [3] { 2, 1, 0},
-        new int [3] { 1, 2, 0}
-};
+            int[][] men = new int[][] {
+            new int [] { 0},
+            new int [] { 1, 2, 3, 4, 5},
+            new int [] { 2, 1, 4, 3, 5},
+            new int [] { 3, 4, 1, 2, 5},
+            new int [] { 4, 3, 2, 1, 5},
+            new int [] { 1, 2, 3, 4, 5}
+            };
 
-            int[][] women = new int[3][] {
-        new int [3] { 1, 2, 0},
-        new int [3] { 1, 0, 2},
-        new int [3] { 0, 2, 1}
-};
+            int[][] women = new int[][] {
+            new int [] { 0},
+            new int [] { 4, 5, 3, 2, 1},
+            new int [] { 3, 5, 4, 1, 2},
+            new int [] { 2, 5, 1, 4, 3},
+            new int [] { 1, 5, 2, 3, 4},
+            new int [] { 5, 1, 2, 3, 4}
+            };
+
+
+            //int[][] men = new int[][] {
+            //new int [] { 6, 0},
+            //new int [] { 2, 0, 1},
+            //new int [] { 0, 2},
+            //new int [] { 4, 1, 3},
+            //new int [] { 1, 4},
+            //new int [] { 3, 5},
+
+            //new int [] { 5, 7, 6},
+            //new int [] { 6, 7},
+            //new int [] { 2},
+            //new int [] { 4}
+            //};
+
+            //int[][] women = new int[][] {
+            //new int [] { 0, 1, 2},
+            //new int [] { 1, 3, 4},
+            //new int [] { 2, 8, 1},
+            //new int [] { 3, 5, 6},
+            //new int [] { 4, 9, 3},
+            //new int [] { 5, 6},
+
+            //new int [] { 6, 0, 7},
+            //new int [] { 7, 6},
+            //};
+
+
+
+            //            int[][] men = new int[4][] {
+            //        new int [4] { 0, 1, 2, 3},
+            //        new int [4] { 3, 0, 1, 2},
+            //        new int [4] { 2, 3, 0, 1},
+            //        new int [4] { 3, 0, 2, 1}
+            //};
+
+            //            int[][] women = new int[4][] {
+            //        new int [4] { 1, 0, 2, 3},
+            //        new int [4] { 2, 0, 3, 1},
+            //        new int [4] { 3, 2, 0, 1},
+            //        new int [4] { 0, 2, 1, 3}
+            //};
 
             //int[][] men = new int[12][] {
             //new int [] { 7, 0},
